@@ -3,1028 +3,804 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Старикам тут не место! — Онлайн Шашки</title>
+<title>Шашки — Старикам тут не место!</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Russo+One&family=Press+Start+2P&display=swap');
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: #0a0a0a;
-    color: #e0e0e0;
-    font-family: 'Russo One', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Animated background */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: 
-      radial-gradient(ellipse at 20% 50%, rgba(255, 60, 0, 0.08) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 20%, rgba(255, 165, 0, 0.06) 0%, transparent 50%),
-      radial-gradient(ellipse at 50% 80%, rgba(139, 0, 0, 0.08) 0%, transparent 50%);
-    z-index: -1;
-    animation: bgPulse 8s ease-in-out infinite alternate;
-  }
-
-  @keyframes bgPulse {
-    0% { opacity: 0.5; }
-    100% { opacity: 1; }
-  }
-
-  /* Particles */
-  .particles {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    pointer-events: none;
-    z-index: -1;
-    overflow: hidden;
-  }
-
-  .particle {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: rgba(255, 100, 0, 0.6);
-    border-radius: 50%;
-    animation: float linear infinite;
-  }
-
-  @keyframes float {
-    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
-  }
-
-  .container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-
-  /* Header */
-  .header {
-    text-align: center;
-    padding: 30px 0 20px;
-  }
-
-  .header h1 {
-    font-family: 'Press Start 2P', cursive;
-    font-size: clamp(16px, 4vw, 32px);
-    color: #ff4500;
-    text-shadow: 0 0 20px rgba(255, 69, 0, 0.5), 0 0 40px rgba(255, 69, 0, 0.3);
-    letter-spacing: 2px;
-    animation: titleGlow 2s ease-in-out infinite alternate;
-    line-height: 1.4;
-  }
-
-  @keyframes titleGlow {
-    0% { text-shadow: 0 0 20px rgba(255, 69, 0, 0.5), 0 0 40px rgba(255, 69, 0, 0.3); }
-    100% { text-shadow: 0 0 30px rgba(255, 69, 0, 0.8), 0 0 60px rgba(255, 69, 0, 0.5), 0 0 80px rgba(255, 69, 0, 0.3); }
-  }
-
-  .subtitle {
-    font-size: 14px;
-    color: #888;
-    margin-top: 10px;
-    font-style: italic;
-  }
-
-  /* Screens */
-  .screen {
-    display: none;
-    animation: fadeIn 0.5s ease;
-  }
-
-  .screen.active {
-    display: block;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* Menu */
-  .menu {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    margin-top: 40px;
-  }
-
-  .btn {
-    font-family: 'Russo One', sans-serif;
-    font-size: 18px;
-    padding: 15px 40px;
-    border: 2px solid #ff4500;
-    background: rgba(255, 69, 0, 0.1);
-    color: #ff6633;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    position: relative;
-    overflow: hidden;
-    min-width: 300px;
-    text-align: center;
-  }
-
-  .btn::before {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%;
-    width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 69, 0, 0.2), transparent);
-    transition: left 0.5s;
-  }
-
-  .btn:hover::before {
-    left: 100%;
-  }
-
-  .btn:hover {
-    background: rgba(255, 69, 0, 0.3);
-    box-shadow: 0 0 30px rgba(255, 69, 0, 0.4), inset 0 0 30px rgba(255, 69, 0, 0.1);
-    transform: scale(1.05);
-  }
-
-  .btn:active {
-    transform: scale(0.98);
-  }
-
-  .btn-small {
-    font-size: 14px;
-    padding: 10px 25px;
-    min-width: 200px;
-  }
-
-  .btn-danger {
-    border-color: #cc0000;
-    color: #ff3333;
-    background: rgba(204, 0, 0, 0.1);
-  }
-
-  .btn-danger:hover {
-    background: rgba(204, 0, 0, 0.3);
-    box-shadow: 0 0 30px rgba(204, 0, 0, 0.4);
-  }
-
-  .btn-success {
-    border-color: #00cc44;
-    color: #33ff77;
-    background: rgba(0, 204, 68, 0.1);
-  }
-
-  .btn-success:hover {
-    background: rgba(0, 204, 68, 0.3);
-    box-shadow: 0 0 30px rgba(0, 204, 68, 0.4);
-  }
-
-  /* Room code */
-  .room-section {
-    text-align: center;
-    margin-top: 30px;
-  }
-
-  .room-code-display {
-    font-family: 'Press Start 2P', cursive;
-    font-size: 36px;
-    color: #ff4500;
-    letter-spacing: 8px;
-    margin: 20px 0;
-    padding: 20px;
-    border: 2px dashed rgba(255, 69, 0, 0.4);
-    background: rgba(255, 69, 0, 0.05);
-    user-select: all;
-    cursor: pointer;
-  }
-
-  .room-code-display:hover {
-    border-color: #ff4500;
-    background: rgba(255, 69, 0, 0.1);
-  }
-
-  .input-group {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin: 20px 0;
-    flex-wrap: wrap;
-  }
-
-  input[type="text"] {
-    font-family: 'Press Start 2P', cursive;
-    font-size: 20px;
-    padding: 15px 20px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid #444;
-    color: #ff6633;
-    text-align: center;
-    letter-spacing: 5px;
-    width: 250px;
-    text-transform: uppercase;
-    transition: border-color 0.3s;
-  }
-
-  input[type="text"]:focus {
-    outline: none;
-    border-color: #ff4500;
-    box-shadow: 0 0 20px rgba(255, 69, 0, 0.3);
-  }
-
-  input[type="text"]::placeholder {
-    color: #555;
-    font-size: 12px;
-    letter-spacing: 2px;
-  }
-
-  /* Status */
-  .status {
-    text-align: center;
-    padding: 15px;
-    margin: 15px 0;
-    font-size: 16px;
-    border-left: 3px solid #ff4500;
-    background: rgba(255, 69, 0, 0.05);
-  }
-
-  .status.waiting {
-    border-color: #ffaa00;
-    color: #ffaa00;
-  }
-
-  .status.connected {
-    border-color: #00cc44;
-    color: #33ff77;
-  }
-
-  .status.error {
-    border-color: #cc0000;
-    color: #ff3333;
-  }
-
-  /* Spinner */
-  .spinner {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(255, 165, 0, 0.3);
-    border-top-color: #ffaa00;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    vertical-align: middle;
-    margin-right: 10px;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* Game Board */
-  .game-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-  }
-
-  .game-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    max-width: 480px;
-    gap: 10px;
-  }
-
-  .player-info {
-    padding: 10px 20px;
-    border: 1px solid #333;
-    background: rgba(255, 255, 255, 0.03);
-    font-size: 14px;
-    flex: 1;
-    text-align: center;
-  }
-
-  .player-info.active-player {
-    border-color: #ff4500;
-    box-shadow: 0 0 15px rgba(255, 69, 0, 0.3);
-    background: rgba(255, 69, 0, 0.1);
-  }
-
-  .player-info .color-dot {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    margin-right: 8px;
-    vertical-align: middle;
-  }
-
-  .player-info .color-dot.white { background: #e8d5b0; border: 1px solid #999; }
-  .player-info .color-dot.black { background: #2a1a0a; border: 1px solid #555; }
-
-  .turn-indicator {
-    text-align: center;
-    font-size: 18px;
-    color: #ff4500;
-    padding: 10px;
-    min-height: 44px;
-  }
-
-  .board-container {
-    position: relative;
-  }
-
-  .board {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 0;
-    border: 3px solid #8B4513;
-    box-shadow: 0 0 30px rgba(139, 69, 19, 0.3), 0 0 60px rgba(0, 0, 0, 0.5);
-    width: min(480px, 90vw);
-    height: min(480px, 90vw);
-  }
-
-  .cell {
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    transition: background 0.2s;
-  }
-
-  .cell.light {
-    background: #f0d9b5;
-  }
-
-  .cell.dark {
-    background: #b58863;
-  }
-
-  .cell.dark.highlight {
-    background: rgba(255, 200, 0, 0.5);
-    cursor: pointer;
-  }
-
-  .cell.dark.highlight::after {
-    content: '';
-    position: absolute;
-    width: 30%;
-    height: 30%;
-    background: rgba(255, 200, 0, 0.7);
-    border-radius: 50%;
-    animation: pulseHighlight 1s ease-in-out infinite;
-  }
-
-  .cell.dark.selected {
-    background: rgba(255, 69, 0, 0.5);
-    box-shadow: inset 0 0 15px rgba(255, 69, 0, 0.5);
-  }
-
-  @keyframes pulseHighlight {
-    0%, 100% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.2); opacity: 1; }
-  }
-
-  .piece {
-    width: 75%;
-    height: 75%;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-    z-index: 2;
-  }
-
-  .piece.white-piece {
-    background: radial-gradient(circle at 35% 35%, #fff, #e8d5b0, #c4a77d);
-    box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 -2px 4px rgba(0,0,0,0.2);
-    border: 2px solid #a08060;
-  }
-
-  .piece.black-piece {
-    background: radial-gradient(circle at 35% 35%, #5a3a1a, #2a1a0a, #1a0a00);
-    box-shadow: 0 3px 6px rgba(0,0,0,0.6), inset 0 -2px 4px rgba(0,0,0,0.3);
-    border: 2px solid #3a2a1a;
-  }
-
-  .piece:hover {
-    transform: scale(1.1);
-    box-shadow: 0 5px 15px rgba(255, 69, 0, 0.4);
-  }
-
-  .piece.king::after {
-    content: '♛';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: clamp(16px, 3vw, 24px);
-    color: gold;
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
-    filter: drop-shadow(0 0 3px rgba(0,0,0,0.8));
-  }
-
-  /* Captured pieces */
-  .captured {
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-    justify-content: center;
-    min-height: 30px;
-  }
-
-  .captured-piece {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    opacity: 0.5;
-  }
-
-  .captured-piece.white-piece {
-    background: #e8d5b0;
-    border: 1px solid #999;
-  }
-
-  .captured-piece.black-piece {
-    background: #2a1a0a;
-    border: 1px solid #555;
-  }
-
-  /* Modal */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.85);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .modal-overlay.active {
-    display: flex;
-  }
-
-  .modal {
-    background: #1a1a1a;
-    border: 2px solid #ff4500;
-    padding: 40px;
-    text-align: center;
-    max-width: 450px;
-    width: 90%;
-    box-shadow: 0 0 50px rgba(255, 69, 0, 0.3);
-    animation: modalIn 0.3s ease;
-  }
-
-  @keyframes modalIn {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
-
-  .modal h2 {
-    font-family: 'Press Start 2P', cursive;
-    font-size: 20px;
-    color: #ff4500;
-    margin-bottom: 15px;
-    line-height: 1.5;
-  }
-
-  .modal p {
-    font-size: 16px;
-    color: #aaa;
-    margin-bottom: 25px;
-  }
-
-  .modal .btn {
-    margin: 5px;
-  }
-
-  /* Chat */
-  .chat-box {
-    width: 100%;
-    max-width: 480px;
-    margin-top: 15px;
-    border: 1px solid #333;
-    background: rgba(0,0,0,0.3);
-  }
-
-  .chat-messages {
-    height: 120px;
-    overflow-y: auto;
-    padding: 10px;
-    font-size: 13px;
-  }
-
-  .chat-messages .msg {
-    margin-bottom: 5px;
-    padding: 3px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-  }
-
-  .chat-messages .msg .sender {
-    color: #ff6633;
-    font-weight: bold;
-  }
-
-  .chat-messages .msg.system {
-    color: #888;
-    font-style: italic;
-  }
-
-  .chat-input-row {
-    display: flex;
-    border-top: 1px solid #333;
-  }
-
-  .chat-input-row input {
-    flex: 1;
-    padding: 10px;
-    background: rgba(255,255,255,0.05);
-    border: none;
-    color: #e0e0e0;
-    font-family: 'Russo One', sans-serif;
-    font-size: 13px;
-  }
-
-  .chat-input-row input:focus { outline: none; }
-
-  .chat-input-row button {
-    padding: 10px 15px;
-    background: rgba(255, 69, 0, 0.2);
-    border: none;
-    border-left: 1px solid #333;
-    color: #ff4500;
-    cursor: pointer;
-    font-family: 'Russo One', sans-serif;
-    transition: background 0.2s;
-  }
-
-  .chat-input-row button:hover {
-    background: rgba(255, 69, 0, 0.4);
-  }
-
-  /* Lobby */
-  .lobby-list {
-    max-width: 500px;
-    margin: 20px auto;
-  }
-
-  .lobby-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    border: 1px solid #333;
-    margin-bottom: 8px;
-    background: rgba(255,255,255,0.02);
-    transition: all 0.2s;
-  }
-
-  .lobby-item:hover {
-    border-color: #ff4500;
-    background: rgba(255, 69, 0, 0.05);
-  }
-
-  .lobby-item .room-name {
-    color: #ff6633;
-    font-size: 16px;
-  }
-
-  .lobby-item .room-status {
-    color: #888;
-    font-size: 12px;
-  }
-
-  /* Responsive */
-  @media (max-width: 500px) {
-    .board {
-      width: 95vw;
-      height: 95vw;
-    }
-    .btn { min-width: 250px; font-size: 14px; padding: 12px 20px; }
-    .room-code-display { font-size: 24px; letter-spacing: 5px; }
-    input[type="text"] { font-size: 16px; width: 200px; }
-  }
-
-  /* Copy notification */
-  .copy-toast {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(255, 69, 0, 0.9);
-    color: white;
-    padding: 10px 25px;
-    font-size: 14px;
-    z-index: 200;
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-  }
-
-  .copy-toast.show {
-    opacity: 1;
-  }
-
-  .rules-section {
-    max-width: 500px;
-    margin: 20px auto;
-    padding: 20px;
-    border: 1px solid #333;
-    background: rgba(255,255,255,0.02);
-    font-size: 14px;
-    line-height: 1.8;
-    color: #aaa;
-  }
-
-  .rules-section h3 {
-    color: #ff4500;
-    margin-bottom: 10px;
-  }
-
-  /* Sound toggle */
-  .sound-btn {
-    position: fixed;
-    top: 15px;
-    right: 15px;
-    background: rgba(0,0,0,0.5);
-    border: 1px solid #444;
-    color: #888;
-    width: 40px;
-    height: 40px;
-    cursor: pointer;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 50;
-    transition: all 0.2s;
-  }
-
-  .sound-btn:hover {
-    border-color: #ff4500;
-    color: #ff4500;
-  }
+@import url('https://fonts.googleapis.com/css2?family=Russo+One&family=Press+Start+2P&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0a0a;
+  color: #e0e0e0;
+  font-family: 'Russo One', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* === ФОНОВАЯ АНИМАЦИЯ === */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(255,0,0,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(255,60,0,0.06) 0%, transparent 50%);
+  z-index: -1;
+  animation: bgPulse 8s ease-in-out infinite alternate;
+}
+
+@keyframes bgPulse {
+  0% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* === HEADER === */
+.header {
+  text-align: center;
+  padding: 30px 20px 10px;
+  position: relative;
+}
+
+.header h1 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(18px, 4vw, 36px);
+  color: #ff2200;
+  text-shadow:
+    0 0 10px rgba(255,34,0,0.8),
+    0 0 40px rgba(255,34,0,0.4),
+    0 0 80px rgba(255,34,0,0.2);
+  letter-spacing: 2px;
+  animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+  0% { text-shadow: 0 0 10px rgba(255,34,0,0.8), 0 0 40px rgba(255,34,0,0.4); }
+  100% { text-shadow: 0 0 20px rgba(255,34,0,1), 0 0 60px rgba(255,34,0,0.6), 0 0 100px rgba(255,34,0,0.3); }
+}
+
+.header .subtitle {
+  font-size: 14px;
+  color: #666;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* === ЭКРАН ЛОББИ === */
+.lobby {
+  max-width: 500px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+.lobby-box {
+  background: linear-gradient(145deg, #1a1a1a, #111);
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 30px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.lobby-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ff2200, transparent);
+}
+
+.lobby-box h2 {
+  font-size: 20px;
+  color: #ff4444;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lobby-box h2 .icon {
+  font-size: 28px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  font-family: 'Russo One', sans-serif;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ff2200, #cc1100);
+  color: white;
+  box-shadow: 0 4px 20px rgba(255,34,0,0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(255,34,0,0.5);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #333, #222);
+  color: #ccc;
+  border: 1px solid #444;
+}
+
+.btn-secondary:hover {
+  border-color: #ff4444;
+  color: white;
+}
+
+.input-group {
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #0d0d0d;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Russo One', sans-serif;
+  font-size: 18px;
+  text-align: center;
+  letter-spacing: 4px;
+  transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #ff4444;
+  box-shadow: 0 0 15px rgba(255,68,68,0.2);
+}
+
+.room-code {
+  background: #0d0d0d;
+  border: 2px dashed #ff4444;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  margin: 15px 0;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.room-code:hover {
+  background: #1a0a0a;
+  border-style: solid;
+}
+
+.room-code .code {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 28px;
+  color: #ff4444;
+  letter-spacing: 6px;
+  text-shadow: 0 0 10px rgba(255,68,68,0.5);
+}
+
+.room-code .hint {
+  font-size: 11px;
+  color: #666;
+  margin-top: 8px;
+}
+
+.divider {
+  text-align: center;
+  margin: 25px 0;
+  position: relative;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: #333;
+}
+
+.divider::before { left: 0; }
+.divider::after { right: 0; }
+
+.divider span {
+  background: #151515;
+  padding: 0 15px;
+  color: #555;
+  font-size: 13px;
+}
+
+.status-bar {
+  text-align: center;
+  padding: 12px;
+  background: rgba(255,34,0,0.1);
+  border: 1px solid rgba(255,34,0,0.2);
+  border-radius: 8px;
+  margin-top: 15px;
+  font-size: 14px;
+  color: #ff6644;
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* === ИГРОВОЙ ЭКРАН === */
+.game-screen {
+  display: none;
+  max-width: 700px;
+  margin: 20px auto;
+  padding: 0 15px;
+}
+
+.game-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 15px 20px;
+  background: linear-gradient(145deg, #1a1a1a, #111);
+  border: 1px solid #333;
+  border-radius: 12px;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.player-info .piece-preview {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #555;
+}
+
+.player-info .piece-preview.red {
+  background: radial-gradient(circle at 35% 35%, #ff6644, #cc2200);
+  border-color: #ff4444;
+}
+
+.player-info .piece-preview.black {
+  background: radial-gradient(circle at 35% 35%, #555, #111);
+  border-color: #777;
+}
+
+.player-info .name {
+  font-size: 14px;
+}
+
+.player-info .score {
+  font-size: 12px;
+  color: #888;
+}
+
+.turn-indicator {
+  text-align: center;
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+.turn-indicator.your-turn {
+  background: rgba(255,34,0,0.2);
+  color: #ff4444;
+  border: 1px solid rgba(255,34,0,0.3);
+  animation: turnPulse 1.5s ease-in-out infinite;
+}
+
+.turn-indicator.opponent-turn {
+  background: rgba(255,255,255,0.05);
+  color: #666;
+  border: 1px solid #333;
+}
+
+@keyframes turnPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,34,0,0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(255,34,0,0); }
+}
+
+/* === ДОСКА === */
+.board-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0;
+  border: 3px solid #444;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow:
+    0 0 30px rgba(0,0,0,0.8),
+    0 0 60px rgba(255,34,0,0.1);
+  width: min(85vw, 560px);
+  height: min(85vw, 560px);
+}
+
+.cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: default;
+  transition: background 0.2s;
+}
+
+.cell.light {
+  background: #d4a574;
+}
+
+.cell.dark {
+  background: #8b5e3c;
+}
+
+.cell.dark.highlight {
+  background: rgba(255,200,0,0.4);
+  cursor: pointer;
+}
+
+.cell.dark.highlight::after {
+  content: '';
+  position: absolute;
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background: rgba(255,200,0,0.6);
+  animation: dotPulse 1s ease-in-out infinite;
+}
+
+.cell.dark.capture-highlight {
+  background: rgba(255,0,0,0.35);
+  cursor: pointer;
+}
+
+.cell.dark.capture-highlight::after {
+  content: '';
+  position: absolute;
+  width: 36%;
+  height: 36%;
+  border-radius: 50%;
+  background: rgba(255,0,0,0.6);
+  animation: dotPulse 0.8s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.6; }
+}
+
+/* === ШАШКИ === */
+.piece {
+  width: 78%;
+  height: 78%;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  z-index: 2;
+}
+
+.piece.red {
+  background: radial-gradient(circle at 35% 35%, #ff8866, #dd3311, #991100);
+  border: 2px solid #ff6644;
+  box-shadow:
+    0 3px 8px rgba(0,0,0,0.5),
+    inset 0 2px 4px rgba(255,255,255,0.2);
+}
+
+.piece.black-piece {
+  background: radial-gradient(circle at 35% 35%, #666, #333, #111);
+  border: 2px solid #888;
+  box-shadow:
+    0 3px 8px rgba(0,0,0,0.5),
+    inset 0 2px 4px rgba(255,255,255,0.1);
+}
+
+.piece:hover {
+  transform: scale(1.08);
+  filter: brightness(1.2);
+}
+
+.piece.selected {
+  transform: scale(1.12);
+  animation: selectedPulse 1s ease-in-out infinite;
+}
+
+.piece.selected.red {
+  box-shadow:
+    0 0 0 3px rgba(255,68,68,0.5),
+    0 0 20px rgba(255,34,0,0.5);
+}
+
+.piece.selected.black-piece {
+  box-shadow:
+    0 0 0 3px rgba(150,150,150,0.5),
+    0 0 20px rgba(150,150,150,0.3);
+}
+
+@keyframes selectedPulse {
+  0%, 100% { filter: brightness(1.2); }
+  50% { filter: brightness(1.4); }
+}
+
+/* Дамка */
+.piece.king::after {
+  content: '♛';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(16px, 4vw, 28px);
+  color: gold;
+  text-shadow: 0 0 8px rgba(255,215,0,0.8);
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+}
+
+/* === ЛОГ === */
+.game-log {
+  background: linear-gradient(145deg, #1a1a1a, #111);
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 15px;
+  max-height: 150px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+}
+
+.game-log h3 {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.game-log .log-entry {
+  font-size: 12px;
+  color: #888;
+  padding: 3px 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.game-log .log-entry.important {
+  color: #ff4444;
+  font-weight: bold;
+}
+
+/* === МОДАЛЬНОЕ ОКНО === */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal {
+  background: linear-gradient(145deg, #1a1a1a, #111);
+  border: 2px solid #ff4444;
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  animation: modalAppear 0.4s ease;
+}
+
+@keyframes modalAppear {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal .result-icon {
+  font-size: 64px;
+  margin-bottom: 15px;
+}
+
+.modal h2 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 22px;
+  color: #ff4444;
+  margin-bottom: 10px;
+}
+
+.modal p {
+  color: #999;
+  margin-bottom: 25px;
+}
+
+.game-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+.game-actions .btn {
+  width: auto;
+  padding: 10px 20px;
+  font-size: 13px;
+}
+
+/* === СКРОЛЛБАР === */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
+
+/* Анимация удаления шашки */
+@keyframes pieceCaptured {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.5; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+.piece.captured {
+  animation: pieceCaptured 0.4s ease forwards;
+  pointer-events: none;
+}
+
+.hidden { display: none !important; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #222;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: 1px solid #ff4444;
+  font-family: 'Russo One', sans-serif;
+  font-size: 14px;
+  z-index: 200;
+  transition: transform 0.3s ease;
+  pointer-events: none;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Particles */
+.particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 300;
+  border-radius: 50%;
+  animation: particleFly 1s ease-out forwards;
+}
+
+@keyframes particleFly {
+  0% { opacity: 1; transform: translate(0,0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
+}
 </style>
 </head>
 <body>
 
-<div class="particles" id="particles"></div>
+<div class="header">
+  <h1>🎯 СТАРИКАМ ТУТ НЕ МЕСТО</h1>
+  <p class="subtitle">Онлайн шашки — P2P мультиплеер</p>
+</div>
 
-<button class="sound-btn" id="soundBtn" title="Звук">🔊</button>
-
-<div class="copy-toast" id="copyToast">Код скопирован!</div>
-
-<div class="container">
-  <div class="header">
-    <h1>СТАРИКАМ ТУТ<br>НЕ МЕСТО!</h1>
-    <p class="subtitle">Онлайн шашки — накончай в оппонента!</p>
-  </div>
-
-  <!-- MENU SCREEN -->
-  <div class="screen active" id="menuScreen">
-    <div class="menu">
-      <button class="btn" onclick="createRoom()">🔥 Создать комнату</button>
-      <button class="btn" onclick="showJoinScreen()">⚡ Присоединиться</button>
-      <button class="btn btn-small" onclick="showRules()">📜 Правила</button>
+<!-- === ЛОББИ === -->
+<div class="lobby" id="lobby">
+  <div class="lobby-box">
+    <h2><span class="icon">🔥</span> Создать игру</h2>
+    <p style="color:#888; font-size:13px; margin-bottom:15px;">
+      Создай комнату и отправь код другу
+    </p>
+    <button class="btn btn-primary" id="btnCreate" onclick="createRoom()">
+      ⚡ Создать комнату
+    </button>
+    <div id="roomCodeBox" class="hidden">
+      <div class="room-code" onclick="copyCode()">
+        <div class="code" id="myRoomCode">---</div>
+        <div class="hint">📋 Нажми чтобы скопировать код</div>
+      </div>
+      <div class="status-bar" id="waitStatus">⏳ Ожидание соперника...</div>
     </div>
   </div>
 
-  <!-- RULES SCREEN -->
-  <div class="screen" id="rulesScreen">
-    <div class="rules-section">
-      <h3>📜 Правила игры</h3>
-      <p>• Играют двое — белые и чёрные<br>
-      • Белые ходят первыми<br>
-      • Шашки ходят по диагонали на одну клетку вперёд<br>
-      • Если можно побить — бей обязательно<br>
-      • Бить можно перепрыгивая через шашку противника<br>
-      • Серия взятий за один ход (мультикапчер)<br>
-      • Шашка, дошедшая до последнего ряда, становится дамкой (♛)<br>
-      • Дамка ходит на одну клетку по диагонали в любом направлении<br>
-      • Твоя мамка умрет!<br>
-      • Побеждает тот, кто заберёт все шашки противника или заблокирует их</p>
+  <div class="divider"><span>ИЛИ</span></div>
+
+  <div class="lobby-box">
+    <h2><span class="icon">🎮</span> Присоединиться</h2>
+    <div class="input-group">
+      <label>Код комнаты</label>
+      <input type="text" id="joinCode" placeholder="ВВЕДИ КОД" maxlength="20"
+             oninput="this.value=this.value.toUpperCase()">
     </div>
-    <div style="text-align:center; margin-top: 15px;">
-      <button class="btn btn-small" onclick="showMenu()">← Назад</button>
-    </div>
-  </div>
-
-  <!-- CREATE ROOM SCREEN -->
-  <div class="screen" id="createScreen">
-    <div class="room-section">
-      <h2 style="color:#ff4500; margin-bottom: 10px;">Комната создана!</h2>
-      <p style="color:#888;">Отправь этот код другу:</p>
-      <div class="room-code-display" id="roomCodeDisplay" onclick="copyRoomCode()" title="Нажми, чтобы скопировать">---</div>
-      <p style="color:#666; font-size:12px;">Нажми на код, чтобы скопировать</p>
-      <div class="status waiting" id="createStatus">
-        <span class="spinner"></span> Ожидание противника...
-      </div>
-      <button class="btn btn-small btn-danger" onclick="cancelRoom()" style="margin-top:15px;">Отмена</button>
-    </div>
-  </div>
-
-  <!-- JOIN ROOM SCREEN -->
-  <div class="screen" id="joinScreen">
-    <div class="room-section">
-      <h2 style="color:#ff4500; margin-bottom: 10px;">Присоединиться</h2>
-      <p style="color:#888;">Введи код комнаты:</p>
-      <div class="input-group">
-        <input type="text" id="joinCodeInput" placeholder="КОД" maxlength="6" autocomplete="off" spellcheck="false">
-        <button class="btn btn-success btn-small" onclick="joinRoom()">Войти</button>
-      </div>
-      <div class="status" id="joinStatus" style="display:none;"></div>
-      <button class="btn btn-small btn-danger" onclick="showMenu()" style="margin-top:15px;">← Назад</button>
-    </div>
-  </div>
-
-  <!-- GAME SCREEN -->
-  <div class="screen" id="gameScreen">
-    <div class="game-wrapper">
-      <div class="game-info">
-        <div class="player-info" id="player1Info">
-          <span class="color-dot white"></span> Белые
-        </div>
-        <div class="player-info" id="player2Info">
-          <span class="color-dot black"></span> Чёрные
-        </div>
-      </div>
-
-      <div class="captured" id="capturedBlack"></div>
-
-      <div class="turn-indicator" id="turnIndicator">Ход белых</div>
-
-      <div class="board-container">
-        <div class="board" id="board"></div>
-      </div>
-
-      <div class="captured" id="capturedWhite"></div>
-
-      <div class="chat-box">
-        <div class="chat-messages" id="chatMessages">
-          <div class="msg system">Игра началась! Удачи!</div>
-        </div>
-        <div class="chat-input-row">
-          <input type="text" id="chatInput" placeholder="Сообщение..." maxlength="100" onkeydown="if(event.key==='Enter')sendChat()">
-          <button onclick="sendChat()">→</button>
-        </div>
-      </div>
-
-      <button class="btn btn-small btn-danger" onclick="leaveGame()">Покинуть игру</button>
+    <button class="btn btn-primary" onclick="joinRoom()">
+      🚀 Подключиться
+    </button>
+    <div id="joinStatus" class="hidden">
+      <div class="status-bar">🔗 Подключение...</div>
     </div>
   </div>
 </div>
 
-<!-- WIN MODAL -->
-<div class="modal-overlay" id="winModal">
+<!-- === ИГРОВОЙ ЭКРАН === -->
+<div class="game-screen" id="gameScreen">
+  <div class="game-info">
+    <div class="player-info">
+      <div class="piece-preview" id="myColorPreview"></div>
+      <div>
+        <div class="name" id="myLabel">Вы</div>
+        <div class="score" id="myScore">Шашек: 12</div>
+      </div>
+    </div>
+    <div class="turn-indicator" id="turnIndicator">Ваш ход</div>
+    <div class="player-info">
+      <div>
+        <div class="name" id="oppLabel">Соперник</div>
+        <div class="score" id="oppScore">Шашек: 12</div>
+      </div>
+      <div class="piece-preview" id="oppColorPreview"></div>
+    </div>
+  </div>
+
+  <div class="board-container">
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="game-log" id="gameLog">
+    <h3>📜 Журнал игры</h3>
+  </div>
+
+  <div class="game-actions">
+    <button class="btn btn-secondary" onclick="surrender()">🏳️ Сдаться</button>
+    <button class="btn btn-secondary" onclick="offerDraw()">🤝 Ничья</button>
+  </div>
+</div>
+
+<!-- === МОДАЛЬНОЕ ОКНО === -->
+<div class="modal-overlay" id="modalOverlay">
   <div class="modal">
-    <h2 id="winTitle">ПОБЕДА!</h2>
-    <p id="winText">Вы выиграли эту партию!</p>
-    <button class="btn" onclick="backToMenu()">В меню</button>
+    <div class="result-icon" id="resultIcon">🏆</div>
+    <h2 id="resultTitle">Победа!</h2>
+    <p id="resultText">Вы выиграли партию</p>
+    <button class="btn btn-primary" onclick="backToLobby()" style="width:auto; padding:12px 30px;">
+      🔄 В лобби
+    </button>
   </div>
 </div>
 
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
 <script>
-// ====================== AUDIO ======================
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let audioCtx;
-let soundEnabled = true;
-
-function initAudio() {
-  if (!audioCtx) audioCtx = new AudioCtx();
-}
-
-function playSound(type) {
-  if (!soundEnabled) return;
-  initAudio();
-  try {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    switch(type) {
-      case 'move':
-        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-        break;
-      case 'capture':
-        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.25);
-        break;
-      case 'king':
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(500, audioCtx.currentTime);
-        osc.frequency.setValueAtTime(700, audioCtx.currentTime + 0.1);
-        osc.frequency.setValueAtTime(900, audioCtx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-        break;
-      case 'win':
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-        osc.frequency.setValueAtTime(500, audioCtx.currentTime + 0.15);
-        osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.3);
-        osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.45);
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.7);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.7);
-        break;
-      case 'click':
-        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-        break;
-    }
-  } catch(e) {}
-}
-
-document.getElementById('soundBtn').addEventListener('click', () => {
-  soundEnabled = !soundEnabled;
-  document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
-});
-
-// ====================== PARTICLES ======================
-(function createParticles() {
-  const container = document.getElementById('particles');
-  for (let i = 0; i < 40; i++) {
-    const p = document.createElement('div');
-    p.className = 'particle';
-    p.style.left = Math.random() * 100 + '%';
-    p.style.animationDuration = (8 + Math.random() * 15) + 's';
-    p.style.animationDelay = (Math.random() * 10) + 's';
-    p.style.width = p.style.height = (1 + Math.random() * 3) + 'px';
-    container.appendChild(p);
-  }
-})();
-
-// ====================== NAVIGATION ======================
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-function showMenu() {
-  cleanupPeer();
-  showScreen('menuScreen');
-}
-
-function showRules() { showScreen('rulesScreen'); }
-function showJoinScreen() { showScreen('joinScreen'); }
-
-// ====================== PEER CONNECTION ======================
+// ===========================
+//  ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+// ===========================
 let peer = null;
 let conn = null;
-let myColor = null; // 'white' or 'black'
+let myColor = null;     // 'red' or 'black'
+let board = [];         // 8x8: null | {color, king}
+let selectedCell = null;
+let validMoves = [];
+let currentTurn = 'red'; // красные ходят первыми
 let isHost = false;
-let roomCode = '';
 let gameActive = false;
+let forcedCaptures = [];  // обязательные взятия
+let multiJumpPiece = null; // шашка делающая серию взятий
 
-// Signaling via PeerJS public server
-// Room code maps to peer ID: "checkers-XXXXXX"
-
-function generateCode() {
+// ===========================
+//  PEER JS SETUP
+// ===========================
+function generateId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
-
-function getPeerId(code) {
-  return 'nochess-checkers-' + code.toUpperCase();
-}
-
-function cleanupPeer() {
-  gameActive = false;
-  if (conn) { try { conn.close(); } catch(e){} conn = null; }
-  if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+  let id = 'SHSH-';
+  for(let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
 }
 
 function createRoom() {
-  playSound('click');
-  cleanupPeer();
-  roomCode = generateCode();
-  const peerId = getPeerId(roomCode);
-  isHost = true;
-  myColor = 'white';
+  const roomId = generateId();
+  document.getElementById('btnCreate').disabled = true;
+  document.getElementById('btnCreate').textContent = '⏳ Создание...';
 
-  showScreen('createScreen');
-  document.getElementById('roomCodeDisplay').textContent = roomCode;
-  const statusEl = document.getElementById('createStatus');
-  statusEl.className = 'status waiting';
-  statusEl.innerHTML = '<span class="spinner"></span> Ожидание противника...';
-
-  peer = new Peer(peerId, {
-    debug: 0,
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' }
-      ]
-    }
+  peer = new Peer(roomId, {
+    debug: 0
   });
 
   peer.on('open', (id) => {
-    console.log('Host peer opened:', id);
+    document.getElementById('myRoomCode').textContent = id;
+    document.getElementById('roomCodeBox').classList.remove('hidden');
+    document.getElementById('btnCreate').textContent = '✅ Комната создана';
+    isHost = true;
+    myColor = 'red';
   });
 
   peer.on('connection', (connection) => {
     conn = connection;
     setupConnection();
-    statusEl.className = 'status connected';
-    statusEl.textContent = '✓ Противник подключился!';
+    document.getElementById('waitStatus').textContent = '✅ Соперник подключился!';
     setTimeout(() => {
-      startGame();
       conn.send({ type: 'start', color: 'black' });
+      startGame();
     }, 500);
   });
 
   peer.on('error', (err) => {
     console.error('Peer error:', err);
-    if (err.type === 'unavailable-id') {
-      statusEl.className = 'status error';
-      statusEl.textContent = '✗ Код занят, попробуйте снова';
-      setTimeout(() => { createRoom(); }, 1500);
-    } else {
-      statusEl.className = 'status error';
-      statusEl.textContent = '✗ Ошибка: ' + err.type;
-    }
+    showToast('❌ Ошибка: ' + err.type);
+    document.getElementById('btnCreate').disabled = false;
+    document.getElementById('btnCreate').textContent = '⚡ Создать комнату';
   });
 }
 
 function joinRoom() {
-  playSound('click');
-  const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
-  if (code.length < 3) {
-    showJoinStatus('Введи код комнаты!', 'error');
+  const code = document.getElementById('joinCode').value.trim();
+  if(!code) {
+    showToast('❌ Введите код комнаты!');
     return;
   }
 
-  cleanupPeer();
-  roomCode = code;
-  isHost = false;
-  myColor = 'black';
+  document.getElementById('joinStatus').classList.remove('hidden');
 
-  showJoinStatus('<span class="spinner"></span> Подключение...', 'waiting');
-
-  peer = new Peer(undefined, {
-    debug: 0,
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' }
-      ]
-    }
-  });
+  peer = new Peer(undefined, { debug: 0 });
 
   peer.on('open', () => {
-    const peerId = getPeerId(code);
-    conn = peer.connect(peerId, { reliable: true });
-    setupConnection();
+    conn = peer.connect(code, { reliable: true });
 
     conn.on('open', () => {
-      showJoinStatus('✓ Подключено!', 'connected');
+      setupConnection();
+    });
+
+    conn.on('error', (err) => {
+      showToast('❌ Не удалось подключиться');
+      console.error(err);
     });
   });
 
   peer.on('error', (err) => {
-    console.error('Join error:', err);
-    if (err.type === 'peer-unavailable') {
-      showJoinStatus('✗ Комната не найдена. Проверь код!', 'error');
-    } else {
-      showJoinStatus('✗ Ошибка: ' + err.type, 'error');
-    }
+    showToast('❌ Ошибка: ' + err.type);
+    document.getElementById('joinStatus').classList.add('hidden');
   });
-}
-
-function showJoinStatus(html, type) {
-  const el = document.getElementById('joinStatus');
-  el.style.display = 'block';
-  el.className = 'status ' + type;
-  el.innerHTML = html;
 }
 
 function setupConnection() {
@@ -1033,607 +809,493 @@ function setupConnection() {
   });
 
   conn.on('close', () => {
-    if (gameActive) {
-      addChatMsg('Система', 'Противник отключился.', true);
-      gameActive = false;
+    if(gameActive) {
+      showToast('⚠️ Соперник отключился');
+      endGame('Соперник сбежал!', 'Победа за вами — соперник отключился', '🏃');
     }
   });
-
-  conn.on('error', (err) => {
-    console.error('Connection error:', err);
-  });
-}
-
-function sendData(data) {
-  if (conn && conn.open) {
-    conn.send(data);
-  }
 }
 
 function handleMessage(data) {
-  switch (data.type) {
+  switch(data.type) {
     case 'start':
       myColor = data.color;
       startGame();
       break;
     case 'move':
-      applyRemoteMove(data);
+      executeMove(data.from, data.to, false);
       break;
-    case 'chat':
-      addChatMsg('Противник', data.text, false);
+    case 'surrender':
+      endGame('Победа!', 'Соперник сдался 🏳️', '🏆');
       break;
-    case 'resign':
-      gameActive = false;
-      showWinModal(myColor === 'white' ? 'Белые' : 'Чёрные', 'Противник сдался!');
+    case 'offerDraw':
+      if(confirm('Соперник предлагает ничью. Принять?')) {
+        conn.send({ type: 'acceptDraw' });
+        endGame('Ничья!', 'Игроки согласились на ничью', '🤝');
+      } else {
+        conn.send({ type: 'declineDraw' });
+      }
+      break;
+    case 'acceptDraw':
+      endGame('Ничья!', 'Соперник принял ничью', '🤝');
+      break;
+    case 'declineDraw':
+      showToast('❌ Соперник отклонил ничью');
       break;
   }
 }
 
-function cancelRoom() {
-  playSound('click');
-  cleanupPeer();
-  showMenu();
-}
-
-function copyRoomCode() {
-  const code = document.getElementById('roomCodeDisplay').textContent;
+function copyCode() {
+  const code = document.getElementById('myRoomCode').textContent;
   navigator.clipboard.writeText(code).then(() => {
-    const toast = document.getElementById('copyToast');
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2000);
-  }).catch(() => {});
+    showToast('📋 Код скопирован!');
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('📋 Код скопирован!');
+  });
 }
 
-// ====================== CHECKERS GAME ======================
-let board = [];
-let selectedPiece = null;
-let currentTurn = 'white'; // white goes first
-let validMoves = [];
-let capturedWhite = 0;
-let capturedBlack = 0;
-let multiCapturePiece = null; // for chain captures
-
-// Board: 0 = empty, 1 = white, 2 = black, 3 = white king, 4 = black king
-
+// ===========================
+//  ИГРОВАЯ ЛОГИКА
+// ===========================
 function initBoard() {
   board = [];
-  for (let r = 0; r < 8; r++) {
+  for(let r = 0; r < 8; r++) {
     board[r] = [];
-    for (let c = 0; c < 8; c++) {
-      board[r][c] = 0;
-      if ((r + c) % 2 === 1) {
-        if (r < 3) board[r][c] = 2; // black top
-        if (r > 4) board[r][c] = 1; // white bottom
+    for(let c = 0; c < 8; c++) {
+      board[r][c] = null;
+      if((r + c) % 2 === 1) {
+        if(r < 3) {
+          board[r][c] = { color: 'black', king: false };
+        } else if(r > 4) {
+          board[r][c] = { color: 'red', king: false };
+        }
       }
     }
   }
-  currentTurn = 'white';
-  selectedPiece = null;
+  currentTurn = 'red';
+  selectedCell = null;
   validMoves = [];
-  capturedWhite = 0;
-  capturedBlack = 0;
-  multiCapturePiece = null;
+  multiJumpPiece = null;
+  forcedCaptures = [];
 }
 
 function startGame() {
   gameActive = true;
   initBoard();
-  showScreen('gameScreen');
+  document.getElementById('lobby').classList.add('hidden');
+  document.getElementById('gameScreen').style.display = 'block';
+
+  // Обновляем UI под цвет
+  const myPrev = document.getElementById('myColorPreview');
+  const oppPrev = document.getElementById('oppColorPreview');
+  myPrev.className = 'piece-preview ' + myColor;
+  oppPrev.className = 'piece-preview ' + (myColor === 'red' ? 'black' : 'red');
+  document.getElementById('myLabel').textContent = 'Вы (' + (myColor === 'red' ? '🔴' : '⚫') + ')';
+  document.getElementById('oppLabel').textContent = 'Соперник (' + (myColor === 'red' ? '⚫' : '🔴') + ')';
+
+  addLog('Игра началась! Красные ходят первыми.');
+  if(myColor === 'red') {
+    addLog('Ваш ход!', true);
+  }
+
   renderBoard();
-  updateUI();
-  document.getElementById('chatMessages').innerHTML = '<div class="msg system">Игра началась! Ты играешь за ' + (myColor === 'white' ? 'белых ⬜' : 'чёрных ⬛') + '</div>';
+  updateTurnUI();
 }
 
 function renderBoard() {
   const boardEl = document.getElementById('board');
   boardEl.innerHTML = '';
 
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
+  // Если мы чёрные — переворачиваем доску
+  const flip = (myColor === 'black');
+
+  for(let ri = 0; ri < 8; ri++) {
+    for(let ci = 0; ci < 8; ci++) {
+      const r = flip ? 7 - ri : ri;
+      const c = flip ? 7 - ci : ci;
+
       const cell = document.createElement('div');
-      cell.className = 'cell ' + ((r + c) % 2 === 0 ? 'light' : 'dark');
+      const isDark = (r + c) % 2 === 1;
+      cell.className = 'cell ' + (isDark ? 'dark' : 'light');
       cell.dataset.row = r;
       cell.dataset.col = c;
 
-      if (selectedPiece && selectedPiece.row === r && selectedPiece.col === c) {
-        cell.classList.add('selected');
+      // Подсветка допустимых ходов
+      if(isDark) {
+        const moveInfo = validMoves.find(m => m.row === r && m.col === c);
+        if(moveInfo) {
+          if(moveInfo.capture) {
+            cell.classList.add('capture-highlight');
+          } else {
+            cell.classList.add('highlight');
+          }
+          cell.addEventListener('click', () => onMoveClick(r, c));
+        }
       }
 
-      // Highlight valid move cells
-      const moveTarget = validMoves.find(m => m.toRow === r && m.toCol === c);
-      if (moveTarget) {
-        cell.classList.add('highlight');
-      }
-
+      // Шашка
       const piece = board[r][c];
-      if (piece > 0) {
+      if(piece) {
         const pieceEl = document.createElement('div');
-        pieceEl.className = 'piece';
-        if (piece === 1 || piece === 3) pieceEl.classList.add('white-piece');
-        if (piece === 2 || piece === 4) pieceEl.classList.add('black-piece');
-        if (piece === 3 || piece === 4) pieceEl.classList.add('king');
+        pieceEl.className = 'piece ' + (piece.color === 'red' ? 'red' : 'black-piece');
+        if(piece.king) pieceEl.classList.add('king');
+
+        // Выделена ли
+        if(selectedCell && selectedCell.row === r && selectedCell.col === c) {
+          pieceEl.classList.add('selected');
+        }
+
+        // Кликабельна ли (своя + свой ход)
+        if(piece.color === myColor && currentTurn === myColor && gameActive) {
+          pieceEl.style.cursor = 'pointer';
+          pieceEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onPieceClick(r, c);
+          });
+        }
+
         cell.appendChild(pieceEl);
       }
 
-      cell.addEventListener('click', () => onCellClick(r, c));
       boardEl.appendChild(cell);
     }
   }
+
+  updateScores();
 }
 
-function updateUI() {
-  const p1 = document.getElementById('player1Info');
-  const p2 = document.getElementById('player2Info');
+function onPieceClick(r, c) {
+  if(currentTurn !== myColor || !gameActive) return;
 
-  p1.innerHTML = '<span class="color-dot white"></span> Белые' + (myColor === 'white' ? ' (Вы)' : '');
-  p2.innerHTML = '<span class="color-dot black"></span> Чёрные' + (myColor === 'black' ? ' (Вы)' : '');
-
-  p1.classList.toggle('active-player', currentTurn === 'white');
-  p2.classList.toggle('active-player', currentTurn === 'black');
-
-  const turnEl = document.getElementById('turnIndicator');
-  if (currentTurn === myColor) {
-    turnEl.textContent = '🔥 Ваш ход!';
-    turnEl.style.color = '#ff4500';
-  } else {
-    turnEl.textContent = '⏳ Ход противника...';
-    turnEl.style.color = '#888';
-  }
-
-  // Captured display
-  const capWhiteEl = document.getElementById('capturedWhite');
-  const capBlackEl = document.getElementById('capturedBlack');
-  capWhiteEl.innerHTML = '';
-  capBlackEl.innerHTML = '';
-  for (let i = 0; i < capturedWhite; i++) {
-    capWhiteEl.innerHTML += '<div class="captured-piece white-piece"></div>';
-  }
-  for (let i = 0; i < capturedBlack; i++) {
-    capBlackEl.innerHTML += '<div class="captured-piece black-piece"></div>';
-  }
-}
-
-function isMyPiece(piece) {
-  if (myColor === 'white') return piece === 1 || piece === 3;
-  if (myColor === 'black') return piece === 2 || piece === 4;
-  return false;
-}
-
-function isOpponentPiece(piece, color) {
-  if (color === 'white') return piece === 2 || piece === 4;
-  if (color === 'black') return piece === 1 || piece === 3;
-  return false;
-}
-
-function isSameColor(piece, color) {
-  if (color === 'white') return piece === 1 || piece === 3;
-  if (color === 'black') return piece === 2 || piece === 4;
-  return false;
-}
-
-function isKing(piece) {
-  return piece === 3 || piece === 4;
-}
-
-function getColor(piece) {
-  if (piece === 1 || piece === 3) return 'white';
-  if (piece === 2 || piece === 4) return 'black';
-  return null;
-}
-
-// Get all valid moves for a piece at (r,c)
-function getMovesForPiece(r, c, boardState) {
-  const piece = boardState[r][c];
-  if (piece === 0) return { moves: [], captures: [] };
-
-  const color = getColor(piece);
-  const king = isKing(piece);
-  const moves = [];
-  const captures = [];
-
-  // Directions
-  let dirs;
-  if (king) {
-    dirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
-  } else if (color === 'white') {
-    dirs = [[-1, -1], [-1, 1]]; // white moves up
-  } else {
-    dirs = [[1, -1], [1, 1]]; // black moves down
-  }
-
-  for (const [dr, dc] of dirs) {
-    const nr = r + dr;
-    const nc = c + dc;
-    if (nr < 0 || nr > 7 || nc < 0 || nc > 7) continue;
-
-    if (boardState[nr][nc] === 0) {
-      moves.push({ fromRow: r, fromCol: c, toRow: nr, toCol: nc, captures: [] });
-    } else if (isOpponentPiece(boardState[nr][nc], color)) {
-      // Can we jump?
-      const jr = nr + dr;
-      const jc = nc + dc;
-      if (jr >= 0 && jr <= 7 && jc >= 0 && jc <= 7 && boardState[jr][jc] === 0) {
-        captures.push({ fromRow: r, fromCol: c, toRow: jr, toCol: jc, captures: [{ row: nr, col: nc }] });
-      }
-    }
-  }
-
-  // For kings, also check capture directions that are not in normal move dirs
-  if (!king) {
-    // Non-king can capture backwards too in some rule sets
-    // Standard international: can capture backwards. Let's allow it.
-    const capDirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
-    for (const [dr, dc] of capDirs) {
-      // Skip dirs we already checked
-      if (dirs.some(d => d[0] === dr && d[1] === dc)) continue;
-
-      const nr = r + dr;
-      const nc = c + dc;
-      if (nr < 0 || nr > 7 || nc < 0 || nc > 7) continue;
-
-      if (isOpponentPiece(boardState[nr][nc], color)) {
-        const jr = nr + dr;
-        const jc = nc + dc;
-        if (jr >= 0 && jr <= 7 && jc >= 0 && jc <= 7 && boardState[jr][jc] === 0) {
-          captures.push({ fromRow: r, fromCol: c, toRow: jr, toCol: jc, captures: [{ row: nr, col: nc }] });
-        }
-      }
-    }
-  }
-
-  return { moves, captures };
-}
-
-// Get all possible chain captures from a position
-function getChainCaptures(r, c, boardState, alreadyCaptured = []) {
-  const piece = boardState[r][c];
-  const color = getColor(piece);
-  const king = isKing(piece);
-  const results = [];
-
-  const capDirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
-
-  for (const [dr, dc] of capDirs) {
-    const nr = r + dr;
-    const nc = c + dc;
-    if (nr < 0 || nr > 7 || nc < 0 || nc > 7) continue;
-
-    // Check if this piece was already captured in this chain
-    if (alreadyCaptured.some(cp => cp.row === nr && cp.col === nc)) continue;
-
-    if (isOpponentPiece(boardState[nr][nc], color)) {
-      const jr = nr + dr;
-      const jc = nc + dc;
-      if (jr >= 0 && jr <= 7 && jc >= 0 && jc <= 7 && boardState[jr][jc] === 0) {
-        const captured = { row: nr, col: nc };
-        const newCaptured = [...alreadyCaptured, captured];
-
-        // Temporarily make the move
-        const tempBoard = boardState.map(row => [...row]);
-        tempBoard[jr][jc] = tempBoard[r][c];
-        tempBoard[r][c] = 0;
-        tempBoard[nr][nc] = 0;
-
-        // Check for promotion
-        if (!king) {
-          if (color === 'white' && jr === 0) tempBoard[jr][jc] = 3;
-          if (color === 'black' && jr === 7) tempBoard[jr][jc] = 4;
-        }
-
-        // Continue chain
-        const further = getChainCaptures(jr, jc, tempBoard, newCaptured);
-
-        if (further.length === 0) {
-          results.push({
-            fromRow: r, fromCol: c, toRow: jr, toCol: jc,
-            captures: newCaptured
-          });
-        } else {
-          for (const f of further) {
-            results.push({
-              fromRow: r, fromCol: c, toRow: f.toRow, toCol: f.toCol,
-              captures: [...newCaptured, ...f.captures.filter(fc => !newCaptured.some(nc2 => nc2.row === fc.row && nc2.col === fc.col))],
-              chain: [{ toRow: jr, toCol: jc }, ...(f.chain || [{ toRow: f.toRow, toCol: f.toCol }])]
-            });
-          }
-        }
-      }
-    }
-  }
-
-  return results;
-}
-
-// Get all valid moves for current player, enforcing mandatory capture
-function getAllMoves(color, boardState) {
-  let allMoves = [];
-  let allCaptures = [];
-
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      if (isSameColor(boardState[r][c], color)) {
-        const { moves, captures } = getMovesForPiece(r, c, boardState);
-        allMoves.push(...moves);
-
-        // Get chain captures
-        const chains = getChainCaptures(r, c, boardState);
-        if (chains.length > 0) {
-          allCaptures.push(...chains);
-        } else {
-          allCaptures.push(...captures);
-        }
-      }
-    }
-  }
-
-  // If captures exist, must capture (and prefer longest chain)
-  if (allCaptures.length > 0) {
-    const maxLen = Math.max(...allCaptures.map(c => c.captures.length));
-    return allCaptures.filter(c => c.captures.length === maxLen);
-  }
-
-  return allMoves;
-}
-
-function onCellClick(r, c) {
-  if (!gameActive) return;
-  if (currentTurn !== myColor) return;
-
-  playSound('click');
-
-  const piece = board[r][c];
-
-  // If we have a multi-capture in progress, only allow continuing
-  if (multiCapturePiece) {
-    const move = validMoves.find(m => m.toRow === r && m.toCol === c);
-    if (move) {
-      executeMove(move);
-    }
+  // При серии взятий — нельзя выбрать другую шашку
+  if(multiJumpPiece && (multiJumpPiece.row !== r || multiJumpPiece.col !== c)) {
+    showToast('⚠️ Продолжайте серию взятий!');
     return;
   }
 
-  // Clicking on own piece: select it
-  if (isSameColor(piece, myColor)) {
-    const allMoves = getAllMoves(myColor, board);
-    // Filter moves for this piece
-    const pieceMoves = allMoves.filter(m => m.fromRow === r && m.fromCol === c);
+  // Проверяем обязательные взятия
+  findForcedCaptures();
 
-    if (pieceMoves.length > 0) {
-      selectedPiece = { row: r, col: c };
-      validMoves = pieceMoves;
-    } else {
-      // Check if there are forced captures from other pieces
-      if (allMoves.length > 0 && allMoves[0].captures && allMoves[0].captures.length > 0) {
-        addChatMsg('Система', 'Вы должны бить!', true);
-      }
-      selectedPiece = null;
-      validMoves = [];
-    }
-    renderBoard();
-    return;
-  }
-
-  // Clicking on a valid move target
-  if (selectedPiece) {
-    const move = validMoves.find(m => m.toRow === r && m.toCol === c);
-    if (move) {
-      executeMove(move);
+  if(forcedCaptures.length > 0) {
+    // Проверяем, есть ли взятие у этой шашки
+    const hasCap = forcedCaptures.some(fc => fc.row === r && fc.col === c);
+    if(!hasCap) {
+      showToast('⚠️ Обязательное взятие!');
       return;
     }
   }
 
-  selectedPiece = null;
-  validMoves = [];
+  selectedCell = { row: r, col: c };
+  validMoves = getValidMoves(r, c);
+
+  // Если есть обязательные взятия — оставляем только взятия
+  if(forcedCaptures.length > 0) {
+    validMoves = validMoves.filter(m => m.capture);
+  }
+
   renderBoard();
 }
 
-function executeMove(move) {
-  const piece = board[move.fromRow][move.fromCol];
-  board[move.toRow][move.toCol] = piece;
-  board[move.fromRow][move.fromCol] = 0;
+function onMoveClick(r, c) {
+  if(!selectedCell) return;
+  const moveInfo = validMoves.find(m => m.row === r && m.col === c);
+  if(!moveInfo) return;
 
+  // Отправляем ход сопернику
+  conn.send({ type: 'move', from: { row: selectedCell.row, col: selectedCell.col }, to: { row: r, col: c } });
+
+  executeMove(selectedCell, { row: r, col: c }, true);
+}
+
+function executeMove(from, to, isMyMove) {
+  const piece = board[from.row][from.col];
+  if(!piece) return;
+
+  const moveInfo = getMoveDetails(from.row, from.col, to.row, to.col, piece);
+
+  // Двигаем шашку
+  board[to.row][to.col] = piece;
+  board[from.row][from.col] = null;
+
+  // Взятие
   let captured = false;
-  let captureCount = 0;
+  if(moveInfo.capture) {
+    board[moveInfo.capturedRow][moveInfo.capturedCol] = null;
+    captured = true;
 
-  // Remove first captured piece (for step-by-step chain)
-  if (move.captures && move.captures.length > 0) {
-    // For simple moves, remove the captured piece
-    // For chain captures we need to handle step by step
-    const capTarget = move.captures[0];
-    const capPiece = board[capTarget.row][capTarget.col];
-    if (capPiece > 0) {
-      if (getColor(capPiece) === 'white') capturedWhite++;
-      else capturedBlack++;
-      board[capTarget.row][capTarget.col] = 0;
-      captured = true;
-      captureCount++;
-    }
+    const capColor = piece.color === 'red' ? '⚫' : '🔴';
+    addLog(`${piece.color === 'red' ? '🔴' : '⚫'} бьёт ${capColor}!`, true);
+
+    // Спавним частицы
+    spawnParticles(to.row, to.col);
   }
 
-  // Check promotion
-  let promoted = false;
-  const color = getColor(board[move.toRow][move.toCol]);
-  if (color === 'white' && move.toRow === 0 && !isKing(board[move.toRow][move.toCol])) {
-    board[move.toRow][move.toCol] = 3;
-    promoted = true;
+  // Дамка
+  if(piece.color === 'red' && to.row === 0 && !piece.king) {
+    piece.king = true;
+    addLog('🔴 получает дамку! 👑', true);
   }
-  if (color === 'black' && move.toRow === 7 && !isKing(board[move.toRow][move.toCol])) {
-    board[move.toRow][move.toCol] = 4;
-    promoted = true;
+  if(piece.color === 'black' && to.row === 7 && !piece.king) {
+    piece.king = true;
+    addLog('⚫ получает дамку! 👑', true);
   }
 
-  // Play sound
-  if (captured) playSound('capture');
-  else playSound('move');
-  if (promoted) setTimeout(() => playSound('king'), 200);
-
-  // Check for more captures from the new position (chain)
-  if (captured && !promoted) {
-    const furtherCaptures = getChainCaptures(move.toRow, move.toCol, board);
-    if (furtherCaptures.length > 0) {
-      // Must continue capturing
-      multiCapturePiece = { row: move.toRow, col: move.toCol };
-      selectedPiece = multiCapturePiece;
-      validMoves = furtherCaptures;
-
-      // Send intermediate move
-      sendData({
-        type: 'move',
-        board: JSON.parse(JSON.stringify(board)),
-        turn: currentTurn,
-        capturedWhite,
-        capturedBlack,
-        continuing: true
-      });
-
+  // Проверяем серию взятий
+  if(captured) {
+    const nextCaptures = getValidMoves(to.row, to.col).filter(m => m.capture);
+    if(nextCaptures.length > 0 && !piece.king || (piece.king && nextCaptures.length > 0)) {
+      // Можно ещё бить — продолжаем ход
+      multiJumpPiece = { row: to.row, col: to.col };
+      selectedCell = { row: to.row, col: to.col };
+      validMoves = nextCaptures;
       renderBoard();
-      updateUI();
+
+      if(!isMyMove) {
+        // Соперник ещё не закончил ход — ждём
+      }
       return;
     }
   }
 
-  // Turn complete
-  multiCapturePiece = null;
-  selectedPiece = null;
+  // Ход завершён
+  multiJumpPiece = null;
+  selectedCell = null;
   validMoves = [];
-  const prevTurn = currentTurn;
-  currentTurn = currentTurn === 'white' ? 'black' : 'white';
+  forcedCaptures = [];
 
-  // Send move to opponent
-  sendData({
-    type: 'move',
-    board: JSON.parse(JSON.stringify(board)),
-    turn: currentTurn,
-    capturedWhite,
-    capturedBlack,
-    continuing: false
-  });
+  // Передаём ход
+  currentTurn = (currentTurn === 'red') ? 'black' : 'red';
 
   renderBoard();
-  updateUI();
-  checkWin();
+  updateTurnUI();
+
+  // Проверяем конец игры
+  checkWinCondition();
 }
 
-function applyRemoteMove(data) {
-  board = data.board;
-  currentTurn = data.turn;
-  capturedWhite = data.capturedWhite;
-  capturedBlack = data.capturedBlack;
+function getMoveDetails(fromR, fromC, toR, toC, piece) {
+  const dr = toR - fromR;
+  const dc = toC - fromC;
 
-  if (!data.continuing) {
-    selectedPiece = null;
-    validMoves = [];
-    multiCapturePiece = null;
+  if(Math.abs(dr) === 2 && Math.abs(dc) === 2) {
+    const capturedRow = fromR + dr / 2;
+    const capturedCol = fromC + dc / 2;
+    return { capture: true, capturedRow, capturedCol };
+  }
 
-    // Check if it captures
-    playSound('move');
+  return { capture: false };
+}
+
+function getValidMoves(r, c) {
+  const piece = board[r][c];
+  if(!piece) return [];
+
+  const moves = [];
+  const dirs = [];
+
+  if(piece.king) {
+    dirs.push([-1, -1], [-1, 1], [1, -1], [1, 1]);
+  } else if(piece.color === 'red') {
+    dirs.push([-1, -1], [-1, 1]); // вверх
+    // Взятия можно и назад
   } else {
-    playSound('capture');
+    dirs.push([1, -1], [1, 1]); // вниз
   }
 
-  renderBoard();
-  updateUI();
-
-  if (!data.continuing) {
-    checkWin();
-  }
-}
-
-function checkWin() {
-  // Count pieces
-  let whitePieces = 0, blackPieces = 0;
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      if (board[r][c] === 1 || board[r][c] === 3) whitePieces++;
-      if (board[r][c] === 2 || board[r][c] === 4) blackPieces++;
+  // Обычные ходы
+  for(const [dr, dc] of dirs) {
+    const nr = r + dr;
+    const nc = c + dc;
+    if(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && board[nr][nc] === null) {
+      moves.push({ row: nr, col: nc, capture: false });
     }
   }
 
-  if (whitePieces === 0) {
-    gameActive = false;
-    playSound('win');
-    showWinModal('Чёрные', 'У белых не осталось шашек!');
-    return;
+  // Взятия (все 4 направления для всех шашек)
+  const capDirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+  for(const [dr, dc] of capDirs) {
+    const mr = r + dr;
+    const mc = c + dc;
+    const nr = r + dr * 2;
+    const nc = c + dc * 2;
+    if(nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+      const mid = board[mr][mc];
+      if(mid && mid.color !== piece.color && board[nr][nc] === null) {
+        moves.push({ row: nr, col: nc, capture: true, capturedRow: mr, capturedCol: mc });
+      }
+    }
   }
-  if (blackPieces === 0) {
-    gameActive = false;
-    playSound('win');
-    showWinModal('Белые', 'У чёрных не осталось шашек!');
-    return;
+
+  return moves;
+}
+
+function findForcedCaptures() {
+  forcedCaptures = [];
+  for(let r = 0; r < 8; r++) {
+    for(let c = 0; c < 8; c++) {
+      const p = board[r][c];
+      if(p && p.color === currentTurn) {
+        const moves = getValidMoves(r, c);
+        if(moves.some(m => m.capture)) {
+          forcedCaptures.push({ row: r, col: c });
+        }
+      }
+    }
+  }
+}
+
+function checkWinCondition() {
+  let redCount = 0, blackCount = 0;
+  let redMoves = false, blackMoves = false;
+
+  for(let r = 0; r < 8; r++) {
+    for(let c = 0; c < 8; c++) {
+      const p = board[r][c];
+      if(p) {
+        if(p.color === 'red') {
+          redCount++;
+          if(getValidMoves(r, c).length > 0) redMoves = true;
+        } else {
+          blackCount++;
+          if(getValidMoves(r, c).length > 0) blackMoves = true;
+        }
+      }
+    }
   }
 
-  // Check if current player has moves
-  const moves = getAllMoves(currentTurn, board);
-  if (moves.length === 0) {
-    gameActive = false;
-    playSound('win');
-    const winner = currentTurn === 'white' ? 'Чёрные' : 'Белые';
-    showWinModal(winner, (currentTurn === 'white' ? 'Белые' : 'Чёрные') + ' заблокированы!');
+  if(redCount === 0 || (!redMoves && currentTurn === 'red')) {
+    const iWin = myColor === 'black';
+    endGame(iWin ? 'Победа!' : 'Поражение!',
+            iWin ? 'У красных не осталось ходов' : 'У вас не осталось ходов',
+            iWin ? '🏆' : '💀');
+  } else if(blackCount === 0 || (!blackMoves && currentTurn === 'black')) {
+    const iWin = myColor === 'red';
+    endGame(iWin ? 'Победа!' : 'Поражение!',
+            iWin ? 'У чёрных не осталось ходов' : 'У вас не осталось ходов',
+            iWin ? '🏆' : '💀');
   }
 }
 
-function showWinModal(winner, reason) {
-  const modal = document.getElementById('winModal');
-  const title = document.getElementById('winTitle');
-  const text = document.getElementById('winText');
-
-  const iWon = (winner === 'Белые' && myColor === 'white') || (winner === 'Чёрные' && myColor === 'black');
-
-  title.textContent = iWon ? '🏆 ПОБЕДА!' : '💀 ПОРАЖЕНИЕ';
-  text.textContent = reason + ' ' + winner + ' побеждают!';
-  modal.classList.add('active');
-}
-
-function backToMenu() {
-  document.getElementById('winModal').classList.remove('active');
-  cleanupPeer();
-  showMenu();
-}
-
-function leaveGame() {
-  playSound('click');
-  if (gameActive && conn && conn.open) {
-    sendData({ type: 'resign' });
-  }
-  gameActive = false;
-  cleanupPeer();
-  showMenu();
-}
-
-// ====================== CHAT ======================
-function sendChat() {
-  const input = document.getElementById('chatInput');
-  const text = input.value.trim();
-  if (!text) return;
-
-  addChatMsg('Вы', text, false);
-  sendData({ type: 'chat', text });
-  input.value = '';
-}
-
-function addChatMsg(sender, text, isSystem) {
-  const container = document.getElementById('chatMessages');
-  const msg = document.createElement('div');
-  msg.className = 'msg' + (isSystem ? ' system' : '');
-  if (isSystem) {
-    msg.textContent = text;
+function updateTurnUI() {
+  const ti = document.getElementById('turnIndicator');
+  if(currentTurn === myColor) {
+    ti.textContent = '🔥 Ваш ход';
+    ti.className = 'turn-indicator your-turn';
   } else {
-    msg.innerHTML = '<span class="sender">' + sender + ':</span> ' + escapeHtml(text);
+    ti.textContent = '⏳ Ход соперника';
+    ti.className = 'turn-indicator opponent-turn';
   }
-  container.appendChild(msg);
-  container.scrollTop = container.scrollHeight;
 }
 
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+function updateScores() {
+  let myCount = 0, oppCount = 0;
+  const oppColor = myColor === 'red' ? 'black' : 'red';
+  for(let r = 0; r < 8; r++) {
+    for(let c = 0; c < 8; c++) {
+      if(board[r][c]) {
+        if(board[r][c].color === myColor) myCount++;
+        else oppCount++;
+      }
+    }
+  }
+  document.getElementById('myScore').textContent = 'Шашек: ' + myCount;
+  document.getElementById('oppScore').textContent = 'Шашек: ' + oppCount;
 }
 
-// ====================== INIT ======================
-document.getElementById('joinCodeInput').addEventListener('input', function() {
-  this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-});
+// ===========================
+//  UI ФУНКЦИИ
+// ===========================
+function addLog(text, important = false) {
+  const log = document.getElementById('gameLog');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry' + (important ? ' important' : '');
+  const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  entry.textContent = `[${time}] ${text}`;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+}
+
+function showToast(text) {
+  const toast = document.getElementById('toast');
+  toast.textContent = text;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function surrender() {
+  if(!gameActive) return;
+  if(confirm('Точно сдаётесь? Это поражение!')) {
+    conn.send({ type: 'surrender' });
+    endGame('Поражение!', 'Вы сдались 🏳️', '💀');
+  }
+}
+
+function offerDraw() {
+  if(!gameActive) return;
+  conn.send({ type: 'offerDraw' });
+  showToast('🤝 Предложение ничьей отправлено');
+}
+
+function endGame(title, text, icon) {
+  gameActive = false;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultText').textContent = text;
+  document.getElementById('resultIcon').textContent = icon;
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function backToLobby() {
+  document.getElementById('modalOverlay').classList.remove('active');
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('lobby').classList.remove('hidden');
+  document.getElementById('btnCreate').disabled = false;
+  document.getElementById('btnCreate').textContent = '⚡ Создать комнату';
+  document.getElementById('roomCodeBox').classList.add('hidden');
+  document.getElementById('joinStatus').classList.add('hidden');
+  document.getElementById('joinCode').value = '';
+  document.getElementById('gameLog').innerHTML = '<h3>📜 Журнал игры</h3>';
+
+  if(conn) { conn.close(); conn = null; }
+  if(peer) { peer.destroy(); peer = null; }
+
+  gameActive = false;
+  multiJumpPiece = null;
+}
+
+function spawnParticles(row, col) {
+  const boardEl = document.getElementById('board');
+  const rect = boardEl.getBoundingClientRect();
+  const cellSize = rect.width / 8;
+  const flip = (myColor === 'black');
+  const dr = flip ? 7 - row : row;
+  const dc = flip ? 7 - col : col;
+  const cx = rect.left + dc * cellSize + cellSize / 2;
+  const cy = rect.top + dr * cellSize + cellSize / 2;
+
+  for(let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 4 + Math.random() * 8;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.background = `hsl(${Math.random() * 40 + 10}, 100%, ${50 + Math.random() * 30}%)`;
+    p.style.left = cx + 'px';
+    p.style.top = cy + 'px';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 40 + Math.random() * 80;
+    p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
+}
 </script>
 
 </body>
