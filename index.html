@@ -1,1525 +1,283 @@
-<!-- index.html — "СТАРИКАМ ТУТ НЕ МЕСТО!" — Русские шашки онлайн (PeerJS WebRTC) -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>СТАРИКАМ ТУТ НЕ МЕСТО!</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;900&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Альманах Химика SS14</title>
 <style>
-/* ═══════════════════════════════════════════════════════
-   ГЛОБАЛЬНЫЕ СТИЛИ — ТЁМНАЯ ТЕМА МИНИМАЛИЗМ
-   ═══════════════════════════════════════════════════════ */
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-
-:root {
-  --bg: #0a0a0a;
-  --panel: #111111;
-  --border: #222;
-  --accent: #e63946;
-  --text: #f1faee;
-  --text2: #a8a8a8;
-  --cell-dark: #1a1a2e;
-  --cell-light: #16213e;
-  --p1: #e63946;
-  --p2: #f1faee;
-  --hl-move: rgba(230,57,70,0.3);
-  --hl-sel: rgba(230,57,70,0.6);
-  --font: 'JetBrains Mono', monospace;
-}
-
-html, body {
-  width:100%; min-height:100vh;
-  background: var(--bg); color: var(--text);
-  font-family: var(--font); font-size:14px;
-  overflow-x:hidden;
-}
-
-/* Скроллбар */
-::-webkit-scrollbar { width:6px; }
-::-webkit-scrollbar-track { background:var(--bg); }
-::-webkit-scrollbar-thumb { background:var(--accent); }
-
-/* ═══════════════════════════════════════════════════════
-   LAYOUT
-   ═══════════════════════════════════════════════════════ */
-#app {
-  display:flex; flex-direction:column; align-items:center;
-  min-height:100vh; padding:16px;
-}
-
-h1.title {
-  font-size: clamp(18px, 5vw, 36px);
-  font-weight:900; text-transform:uppercase;
-  letter-spacing:6px; color:var(--accent);
-  text-align:center; margin:16px 0 8px;
-  text-shadow: 0 0 30px rgba(230,57,70,0.3);
-  user-select:none;
-}
-
-.subtitle {
-  color:var(--text2); font-size:12px; margin-bottom:20px;
-  letter-spacing:2px; text-transform:uppercase;
-}
-
-/* ═══════════════════════════════════════════════════════
-   ПАНЕЛИ / КАРТОЧКИ
-   ═══════════════════════════════════════════════════════ */
-.panel {
-  background:var(--panel); border:1px solid var(--border);
-  padding:24px; width:100%; max-width:500px; margin-bottom:16px;
-}
-
-.panel-title {
-  font-size:13px; font-weight:700; color:var(--accent);
-  letter-spacing:3px; text-transform:uppercase; margin-bottom:16px;
-}
-
-/* ═══════════════════════════════════════════════════════
-   КНОПКИ
-   ═══════════════════════════════════════════════════════ */
-.btn {
-  display:inline-block; padding:12px 24px;
-  background:transparent; color:var(--accent);
-  border:1px solid var(--accent); border-radius:0;
-  font-family:var(--font); font-size:13px; font-weight:700;
-  letter-spacing:2px; text-transform:uppercase;
-  cursor:pointer; transition:all 0.2s; user-select:none;
-}
-.btn:hover, .btn.active { background:var(--accent); color:var(--bg); }
-.btn:disabled { opacity:0.3; cursor:default; }
-.btn:disabled:hover { background:transparent; color:var(--accent); }
-.btn-sm { padding:8px 16px; font-size:11px; }
-.btn-block { display:block; width:100%; text-align:center; }
-.btn + .btn { margin-left:8px; }
-
-/* ═══════════════════════════════════════════════════════
-   ИНПУТЫ
-   ═══════════════════════════════════════════════════════ */
-.input {
-  background:var(--bg); border:1px solid var(--border); color:var(--text);
-  font-family:var(--font); font-size:14px; padding:12px 16px;
-  border-radius:0; outline:none; width:100%; transition:border-color 0.2s;
-}
-.input:focus { border-color:var(--accent); }
-.input::placeholder { color:var(--text2); }
-.input-group { display:flex; gap:8px; margin-bottom:12px; }
-.input-group .input { flex:1; }
-
-/* ═══════════════════════════════════════════════════════
-   СТАТУС ИНДИКАТОР
-   ═══════════════════════════════════════════════════════ */
-.status-dot {
-  display:inline-block; width:8px; height:8px; border-radius:50%;
-  background:#e63946; margin-right:8px; vertical-align:middle;
-  transition:background 0.3s;
-}
-.status-dot.online { background:#2ecc71; }
-.status-line {
-  font-size:11px; color:var(--text2); margin-top:12px;
-  display:flex; align-items:center;
-}
-
-/* ═══════════════════════════════════════════════════════
-   ЭКРАН ОЖИДАНИЯ
-   ═══════════════════════════════════════════════════════ */
-.room-code {
-  font-size: clamp(32px,10vw,56px); font-weight:900;
-  letter-spacing:12px; color:var(--accent); text-align:center;
-  padding:24px 0; cursor:pointer; user-select:all;
-  transition:text-shadow 0.3s;
-}
-.room-code:hover { text-shadow:0 0 20px rgba(230,57,70,0.6); }
-
-.waiting-dots::after {
-  content:''; animation: dots 1.5s steps(4,end) infinite;
-}
-@keyframes dots {
-  0%   { content:''; }
-  25%  { content:'.'; }
-  50%  { content:'..'; }
-  75%  { content:'...'; }
-  100% { content:''; }
-}
-
-/* ═══════════════════════════════════════════════════════
-   ДОСКА
-   ═══════════════════════════════════════════════════════ */
-.game-container {
-  display:flex; flex-direction:column; align-items:center;
-  width:100%; max-width:540px;
-}
-
-.player-bar {
-  display:flex; align-items:center; justify-content:space-between;
-  width:100%; max-width:500px; padding:8px 4px;
-  font-size:12px; letter-spacing:1px; text-transform:uppercase;
-}
-.player-bar .name {
-  display:flex; align-items:center; gap:8px;
-}
-.player-bar .color-dot {
-  width:14px; height:14px; border-radius:50%;
-  border:2px solid var(--border);
-}
-.player-bar.active-turn { color:var(--accent); }
-.player-bar.active-turn .color-dot { border-color:var(--accent); box-shadow:0 0 8px var(--accent); }
-.player-bar .captured { color:var(--text2); font-size:11px; }
-
-.board-wrapper {
-  position:relative; width:100%; max-width:500px;
-  aspect-ratio:1/1;
-  box-shadow: 0 0 40px rgba(230,57,70,0.1), 0 0 80px rgba(230,57,70,0.05);
-  border:2px solid var(--border);
-}
-
-.board {
-  display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr);
-  width:100%; height:100%;
-}
-
-.cell {
-  position:relative; display:flex; align-items:center; justify-content:center;
-  cursor:default; transition:background 0.2s;
-}
-.cell.light { background:var(--cell-light); }
-.cell.dark { background:var(--cell-dark); }
-.cell.highlight { background:var(--hl-move); cursor:pointer; }
-.cell.highlight::after {
-  content:''; position:absolute; width:30%; height:30%; border-radius:50%;
-  background:var(--accent); opacity:0.5;
-}
-.cell.selected { background:var(--hl-sel); }
-
-/* ═══════════════════════════════════════════════════════
-   ШАШКИ
-   ═══════════════════════════════════════════════════════ */
-.piece {
-  width:75%; height:75%; border-radius:50%;
-  position:absolute; z-index:2;
-  transition: all 0.3s ease;
-  cursor:pointer; user-select:none;
-  display:flex; align-items:center; justify-content:center;
-}
-.piece.p1 {
-  background: radial-gradient(circle at 35% 35%, #ff5c6a, #e63946 60%, #b02a33);
-  border:2px solid #ff8a94;
-  box-shadow: 0 3px 10px rgba(230,57,70,0.5), inset 0 -2px 4px rgba(0,0,0,0.3);
-}
-.piece.p2 {
-  background: radial-gradient(circle at 35% 35%, #ffffff, #f1faee 60%, #c8d6c5);
-  border:2px solid #ffffff;
-  box-shadow: 0 3px 10px rgba(241,250,238,0.3), inset 0 -2px 4px rgba(0,0,0,0.15);
-}
-.piece.king::after {
-  content:''; width:50%; height:50%; border-radius:50%;
-  border:2px solid rgba(0,0,0,0.3);
-  box-shadow: inset 0 0 6px rgba(0,0,0,0.2);
-}
-.piece.p1.king::after { border-color:rgba(255,255,255,0.4); box-shadow:inset 0 0 6px rgba(255,255,255,0.2); }
-.piece.p2.king::after { border-color:rgba(0,0,0,0.25); }
-
-.piece.selected {
-  animation: pulse 0.8s ease-in-out infinite alternate;
-  z-index:10;
-}
-@keyframes pulse {
-  from { transform:scale(1); box-shadow: 0 3px 10px rgba(230,57,70,0.5); }
-  to   { transform:scale(1.1); box-shadow: 0 0 20px rgba(230,57,70,0.8); }
-}
-
-/* ═══════════════════════════════════════════════════════
-   ИГРОВЫЕ КНОПКИ ПОД ДОСКОЙ
-   ═══════════════════════════════════════════════════════ */
-.game-controls {
-  display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;
-  justify-content:center;
-}
-
-/* ═══════════════════════════════════════════════════════
-   ЛОГ ХОДОВ
-   ═══════════════════════════════════════════════════════ */
-.move-log {
-  width:100%; max-width:500px; margin-top:12px;
-  max-height:120px; overflow-y:auto;
-  background:var(--panel); border:1px solid var(--border);
-  padding:8px 12px; font-size:11px; color:var(--text2);
-}
-.move-log div { padding:2px 0; border-bottom:1px solid #1a1a1a; }
-.move-log div:last-child { border-bottom:none; }
-
-/* ═══════════════════════════════════════════════════════
-   РЕЗУЛЬТАТ
-   ═══════════════════════════════════════════════════════ */
-.result-overlay {
-  position:fixed; top:0; left:0; right:0; bottom:0; z-index:100;
-  background:rgba(10,10,10,0.92); display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  animation: fadeIn 0.3s ease;
-}
-@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
-
-.result-text {
-  font-size:clamp(28px,8vw,56px); font-weight:900;
-  letter-spacing:8px; text-transform:uppercase;
-  animation: blink 1s ease-in-out 3;
-}
-@keyframes blink {
-  0%,100% { opacity:1; }
-  50% { opacity:0.3; }
-}
-.result-text.win { color:var(--accent); }
-.result-text.lose { color:var(--text2); }
-.result-text.draw { color:#f4a261; }
-.result-buttons { margin-top:32px; display:flex; gap:12px; }
-
-/* ═══════════════════════════════════════════════════════
-   МОДАЛЬНЫЕ ОКНА
-   ═══════════════════════════════════════════════════════ */
-.modal-overlay {
-  position:fixed; top:0; left:0; right:0; bottom:0; z-index:90;
-  background:rgba(10,10,10,0.8); display:flex;
-  align-items:center; justify-content:center;
-}
-.modal {
-  background:var(--panel); border:1px solid var(--accent);
-  padding:32px; max-width:400px; width:90%; text-align:center;
-}
-.modal p { margin-bottom:20px; font-size:14px; line-height:1.6; }
-.modal .btn + .btn { margin-left:8px; }
-
-/* ═══════════════════════════════════════════════════════
-   ЗВУК-КНОПКА
-   ═══════════════════════════════════════════════════════ */
-.sound-toggle {
-  position:fixed; top:12px; right:12px; z-index:50;
-  background:transparent; border:1px solid var(--border);
-  color:var(--text2); font-size:20px; width:40px; height:40px;
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  transition:all 0.2s; border-radius:0; font-family:var(--font);
-}
-.sound-toggle:hover { border-color:var(--accent); color:var(--accent); }
-
-/* ═══════════════════════════════════════════════════════
-   СТАТИСТИКА
-   ═══════════════════════════════════════════════════════ */
-.stats {
-  font-size:11px; color:var(--text2); letter-spacing:1px;
-  text-align:center; margin-top:8px;
-}
-.stats span { color:var(--accent); font-weight:700; }
-
-/* ═══════════════════════════════════════════════════════
-   ПИНГ
-   ═══════════════════════════════════════════════════════ */
-.ping-display {
-  font-size:10px; color:var(--text2); position:fixed; bottom:8px; right:12px;
-}
-
-/* ═══════════════════════════════════════════════════════
-   ТАЙМЕР
-   ═══════════════════════════════════════════════════════ */
-.timer {
-  font-size:18px; font-weight:700; color:var(--text);
-  min-width:60px; text-align:center;
-}
-.timer.urgent { color:var(--accent); animation: blink 0.5s ease-in-out infinite; }
-
-/* ═══════════════════════════════════════════════════════
-   TOAST УВЕДОМЛЕНИЯ
-   ═══════════════════════════════════════════════════════ */
-.toast {
-  position:fixed; top:16px; left:50%; transform:translateX(-50%);
-  background:var(--accent); color:var(--bg); padding:10px 24px;
-  font-size:12px; font-weight:700; letter-spacing:1px; z-index:200;
-  animation: slideDown 0.3s ease, fadeOut 0.3s ease 2.7s;
-  opacity:1;
-}
-@keyframes slideDown { from{top:-40px;opacity:0;} to{top:16px;opacity:1;} }
-@keyframes fadeOut { from{opacity:1;} to{opacity:0;} }
-
-/* Адаптивность */
-@media(max-width:520px){
-  .board-wrapper { max-width:95vw; }
-  .player-bar { max-width:95vw; }
-  .panel { max-width:95vw; }
-  h1.title { letter-spacing:3px; }
-  .room-code { letter-spacing:8px; }
-}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--dim:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--orange:#d29922;--purple:#bc8cff;--cyan:#39d2c0;--pink:#f778ba}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6;min-height:100vh}
+.header{background:linear-gradient(135deg,#0d1117 0%,#161b22 100%);border-bottom:1px solid var(--border);padding:20px 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.header-inner{max-width:1200px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:12px}
+.logo svg{flex-shrink:0}
+.logo h1{font-size:1.4rem;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo span{font-size:.75rem;color:var(--dim);display:block;-webkit-text-fill-color:var(--dim)}
+.search-box{flex:1;min-width:250px;position:relative}
+.search-box input{width:100%;padding:10px 16px 10px 42px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;outline:none;transition:border-color .2s}
+.search-box input:focus{border-color:var(--accent)}
+.search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--dim)}
+.stats{display:flex;gap:16px;font-size:.8rem;color:var(--dim)}
+.stats span{display:flex;align-items:center;gap:4px}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.tab{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:.85rem;color:var(--dim);background:transparent;border:1px solid transparent;transition:all .2s;display:flex;align-items:center;gap:6px;user-select:none}
+.tab:hover{color:var(--text);background:var(--card)}
+.tab.active{color:var(--accent);background:rgba(88,166,255,.1);border-color:rgba(88,166,255,.3)}
+.tab .count{background:var(--border);color:var(--dim);padding:1px 7px;border-radius:10px;font-size:.7rem}
+.tab.active .count{background:rgba(88,166,255,.2);color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;transition:all .2s;cursor:default}
+.card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px}
+.card-title{font-size:1rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px}
+.card-title svg{flex-shrink:0}
+.badge{padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.badge-med{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-tox{background:rgba(248,81,73,.15);color:var(--red)}
+.badge-util{background:rgba(210,153,34,.15);color:var(--orange)}
+.badge-narc{background:rgba(188,140,255,.15);color:var(--purple)}
+.badge-pyro{background:rgba(248,81,73,.15);color:#ff7b72}
+.badge-cryo{background:rgba(57,210,192,.15);color:var(--cyan)}
+.badge-base{background:rgba(139,148,158,.15);color:var(--dim)}
+.badge-botan{background:rgba(63,185,80,.15);color:#56d364}
+.badge-other{background:rgba(247,120,186,.15);color:var(--pink)}
+.card-desc{font-size:.8rem;color:var(--dim);margin-bottom:10px;line-height:1.5}
+.recipe{background:var(--bg);border-radius:6px;padding:10px 12px;margin-top:8px}
+.recipe-label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:flex;align-items:center;gap:4px}
+.recipe-content{font-size:.85rem;color:var(--cyan);font-family:'Cascadia Code','Fira Code',monospace;word-break:break-word}
+.recipe-content .sep{color:var(--border);margin:0 2px}
+.card-meta{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+.meta-item{font-size:.72rem;color:var(--dim);display:flex;align-items:center;gap:4px}
+.meta-item svg{flex-shrink:0}
+.od{color:var(--red)}
+.heal{color:var(--green)}
+.dmg{color:var(--red)}
+.no-results{text-align:center;padding:60px 20px;color:var(--dim)}
+.no-results svg{margin-bottom:16px;opacity:.4}
+.no-results p{font-size:1.1rem}
+.hidden{display:none!important}
+.temp{color:var(--orange)}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.header-inner{flex-direction:column;align-items:stretch}.stats{justify-content:center}}
 </style>
 </head>
 <body>
-
-<button class="sound-toggle" id="soundBtn" title="Звук">🔊</button>
-<div id="pingDisplay" class="ping-display"></div>
-
-<div id="app">
-  <h1 class="title">СТАРИКАМ ТУТ НЕ МЕСТО!</h1>
-  <div class="subtitle">Русские шашки • Онлайн</div>
-
-  <!-- ═══════ ЭКРАН: ЛОББИ ═══════ -->
-  <div id="screenLobby">
-    <div class="panel">
-      <div class="panel-title">Онлайн игра</div>
-      <button class="btn btn-block" id="btnCreate" style="margin-bottom:16px;">Создать комнату</button>
-      <div class="input-group">
-        <input class="input" id="inputCode" placeholder="Код комнаты" maxlength="6" style="text-transform:uppercase;">
-        <button class="btn" id="btnJoin">Войти</button>
-      </div>
-      <div class="status-line">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusText">Подключение к серверу...</span>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">Локальная игра</div>
-      <button class="btn btn-block" id="btnLocal">2 игрока за одним устройством</button>
-    </div>
-
-    <!-- Настройки PeerJS сервера (fallback) -->
-    <div class="panel" style="border-color:#1a1a1a;">
-      <details>
-        <summary style="cursor:pointer; font-size:11px; color:var(--text2); letter-spacing:1px; text-transform:uppercase;">
-          ⚙ Настройки сервера
-        </summary>
-        <div style="margin-top:12px;">
-          <div class="input-group">
-            <input class="input" id="inputHost" placeholder="Хост (0.peerjs.com)" style="font-size:12px;">
-          </div>
-          <div class="input-group">
-            <input class="input" id="inputPort" placeholder="Порт (443)" type="number" style="font-size:12px;">
-          </div>
-          <div class="input-group">
-            <input class="input" id="inputPath" placeholder="Путь (/)" style="font-size:12px;">
-          </div>
-          <button class="btn btn-sm btn-block" id="btnReconnect">Переподключиться</button>
-        </div>
-      </details>
-    </div>
-
-    <div class="stats" id="statsDisplay"></div>
-  </div>
-
-  <!-- ═══════ ЭКРАН: ОЖИДАНИЕ ═══════ -->
-  <div id="screenWaiting" style="display:none;">
-    <div class="panel" style="text-align:center;">
-      <div class="panel-title">Комната создана</div>
-      <div class="room-code" id="roomCodeDisplay" title="Нажми, чтобы скопировать">----</div>
-      <p style="color:var(--text2); font-size:12px; margin-bottom:8px;">
-        Передай этот код сопернику
-      </p>
-      <p style="color:var(--text2); font-size:12px;">
-        Ожидание противника<span class="waiting-dots"></span>
-      </p>
-      <button class="btn btn-sm" id="btnCancelWait" style="margin-top:20px;">Отмена</button>
-    </div>
-  </div>
-
-  <!-- ═══════ ЭКРАН: ИГРА ═══════ -->
-  <div id="screenGame" style="display:none;">
-    <div class="game-container">
-      <!-- Противник (сверху) -->
-      <div class="player-bar" id="barOpponent">
-        <div class="name">
-          <div class="color-dot" id="dotOpponent"></div>
-          <span id="nameOpponent">Противник</span>
-        </div>
-        <div class="timer" id="timerOpponent">60</div>
-        <div class="captured" id="capturedOpponent">×0</div>
-      </div>
-
-      <!-- Доска -->
-      <div class="board-wrapper">
-        <div class="board" id="board"></div>
-      </div>
-
-      <!-- Игрок (снизу) -->
-      <div class="player-bar" id="barPlayer">
-        <div class="name">
-          <div class="color-dot" id="dotPlayer"></div>
-          <span id="namePlayer">Вы</span>
-        </div>
-        <div class="timer" id="timerPlayer">60</div>
-        <div class="captured" id="capturedPlayer">×0</div>
-      </div>
-
-      <!-- Кнопки -->
-      <div class="game-controls">
-        <button class="btn btn-sm" id="btnResign">Сдаться</button>
-        <button class="btn btn-sm" id="btnDraw">Предложить ничью</button>
-      </div>
-
-      <!-- Лог ходов -->
-      <div class="move-log" id="moveLog"></div>
-    </div>
-  </div>
+<div class="header"><div class="header-inner">
+<div class="logo">
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="16" stroke="#58a6ff" stroke-width="2"/><circle cx="18" cy="12" r="4" fill="#58a6ff" opacity=".8"/><circle cx="12" cy="22" r="3" fill="#3fb950" opacity=".8"/><circle cx="24" cy="22" r="3" fill="#f85149" opacity=".8"/><line x1="18" y1="16" x2="13" y2="20" stroke="#8b949e" stroke-width="1.5"/><line x1="18" y1="16" x2="23" y2="20" stroke="#8b949e" stroke-width="1.5"/><line x1="12" y1="22" x2="24" y2="22" stroke="#8b949e" stroke-width="1.5"/></svg>
+<div><h1>Альманах Химика SS14</h1><span>Справочник всех реагентов и рецептов</span></div>
 </div>
-
-<!-- ═══════ МОДАЛЬНОЕ ОКНО (общее) ═══════ -->
-<div class="modal-overlay" id="modal" style="display:none;">
-  <div class="modal">
-    <p id="modalText">Текст</p>
-    <div id="modalButtons"></div>
-  </div>
+<div class="search-box">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.5 7a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm-.82 4.74a6 6 0 1 1 1.06-1.06l3.04 3.04a.75.75 0 1 1-1.06 1.06l-3.04-3.04Z"/></svg>
+<input type="text" id="searchInput" placeholder="Поиск по названию, рецепту, эффекту..." autocomplete="off">
 </div>
-
-<!-- ═══════ ЭКРАН РЕЗУЛЬТАТА ═══════ -->
-<div class="result-overlay" id="screenResult" style="display:none;">
-  <div class="result-text" id="resultText">ПОБЕДА</div>
-  <div style="font-size:13px; color:var(--text2); margin-top:12px; letter-spacing:2px;" id="resultSub"></div>
-  <div class="result-buttons">
-    <button class="btn" id="btnRematch">Реванш</button>
-    <button class="btn" id="btnToLobby">В лобби</button>
-  </div>
+<div class="stats">
+<span><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1.75V13.5h13.75a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1-.75-.75V1.75a.75.75 0 0 1 1.5 0Zm14.28 2.53-5.25 5.25a.75.75 0 0 1-1.06 0L7 7.06 4.28 9.78a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l3.25-3.25a.75.75 0 0 1 1.06 0L10 7.94l4.72-4.72a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042Z"/></svg><span id="totalCount">0</span> реагентов</span>
+<span><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25ZM6.5 6.5v8h7.75a.25.25 0 0 0 .25-.25V6.5Zm8-1.5V1.75a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25V5ZM5 6.5H1.5v7.75c0 .138.112.25.25.25H5Z"/></svg><span id="catCount">0</span> категорий</span>
 </div>
-
+</div></div>
+<div class="container">
+<div class="tabs" id="tabs"></div>
+<div class="grid" id="grid"></div>
+<div class="no-results hidden" id="noResults">
+<svg width="48" height="48" viewBox="0 0 16 16" fill="currentColor" opacity=".3"><path d="M11.5 7a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm-.82 4.74a6 6 0 1 1 1.06-1.06l3.04 3.04a.75.75 0 1 1-1.06 1.06l-3.04-3.04Z"/></svg>
+<p>Ничего не найдено</p>
+</div>
+</div>
 <script>
-/* ═══════════════════════════════════════════════════════════════
-   "СТАРИКАМ ТУТ НЕ МЕСТО!" — Русские шашки онлайн
-   PeerJS WebRTC P2P — один файл, без серверного кода
-   ═══════════════════════════════════════════════════════════════ */
-
-// ─────────────────────────────────────
-// ЗВУК (Web Audio API)
-// ─────────────────────────────────────
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let audioCtx = null;
-let soundEnabled = true;
-
-function ensureAudio() {
-  if (!audioCtx) audioCtx = new AudioCtx();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-}
-
-function playTone(freq, duration, gain = 0.15, type = 'sine') {
-  if (!soundEnabled) return;
-  ensureAudio();
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.type = type;
-  o.frequency.value = freq;
-  g.gain.value = gain;
-  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-  o.connect(g); g.connect(audioCtx.destination);
-  o.start(); o.stop(audioCtx.currentTime + duration);
-}
-
-function sndClick()   { playTone(800, 0.05, 0.12); }
-function sndMove()    { playTone(400, 0.10, 0.15, 'triangle'); }
-function sndCapture() { playTone(600, 0.08, 0.25, 'square'); }
-function sndWin() {
-  playTone(523, 0.15, 0.15); setTimeout(()=>playTone(659,0.15,0.15),150);
-  setTimeout(()=>playTone(784,0.25,0.2),300);
-}
-function sndLose() {
-  playTone(400, 0.2, 0.15); setTimeout(()=>playTone(300,0.3,0.15),200);
-}
-
-document.getElementById('soundBtn').addEventListener('click', () => {
-  soundEnabled = !soundEnabled;
-  document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
-});
-
-// ─────────────────────────────────────
-// УТИЛИТЫ
-// ─────────────────────────────────────
-function $(id) { return document.getElementById(id); }
-function show(id) { $(id).style.display = ''; }
-function hide(id) { $(id).style.display = 'none'; }
-function genCode() {
-  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let r = ''; for(let i=0;i<5;i++) r += c[Math.floor(Math.random()*c.length)];
-  return r;
-}
-
-function toast(msg) {
-  const t = document.createElement('div');
-  t.className = 'toast'; t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(), 3000);
-}
-
-function vibrate(ms=50) {
-  if (navigator.vibrate) navigator.vibrate(ms);
-}
-
-// Уведомления
-function notifyMove() {
-  if (document.hidden && Notification.permission === 'granted') {
-    new Notification('СТАРИКАМ ТУТ НЕ МЕСТО!', { body: 'Противник сделал ход!' });
-  }
-}
-if ('Notification' in window && Notification.permission === 'default') {
-  Notification.requestPermission();
-}
-
-// Статистика localStorage
-function loadStats() {
-  try { return JSON.parse(localStorage.getItem('checkers_stats')) || {w:0,l:0,d:0}; }
-  catch { return {w:0,l:0,d:0}; }
-}
-function saveStats(s) { localStorage.setItem('checkers_stats', JSON.stringify(s)); }
-function displayStats() {
-  const s = loadStats();
-  $('statsDisplay').innerHTML = `Побед: <span>${s.w}</span> | Поражений: <span>${s.l}</span> | Ничьих: <span>${s.d}</span>`;
-}
-displayStats();
-
-// ─────────────────────────────────────
-// СОСТОЯНИЕ ИГРЫ
-// ─────────────────────────────────────
-
-/*
-  board[row][col] :
-    0  = пусто
-    1  = шашка игрока 1 (красные)
-    2  = шашка игрока 2 (белые)
-    3  = дамка игрока 1
-    4  = дамка игрока 2
-*/
-
-let gameState = {
-  board: [],         // 8x8 массив
-  turn: 1,           // чей ход (1 или 2)
-  myColor: 0,        // цвет текущего игрока (1 или 2)
-  selected: null,     // {row, col}
-  validMoves: [],     // [{row,col,captures:[...],path:[...]}]
-  mustCapture: false,  // обязательное взятие
-  chainPiece: null,    // шашка в серии взятий {row,col}
-  captured1: 0,        // сколько сбил игрок 1
-  captured2: 0,        // сколько сбил игрок 2
-  moveNum: 0,
-  isLocal: false,
-  gameOver: false,
-  timerPlayer: 60,
-  timerOpponent: 60
+const DB=[
+{cat:"Медицина",badge:"med",items:[
+{n:"Бикаридин",e:"Лечит 5 Brute за единицу. Передозировка >30u.",r:"Углерод [1] + Инапровалин [1]",od:"30u",heal:"5 Brute/u",note:"Базовое лекарство от механических повреждений"},
+{n:"Дермалин",e:"Лечит 6 Burn за единицу. Передозировка при >30u наносит 2 Asphyxiation.",r:"Келотан [1] + Кислород [1] + Фосфор [1]",od:"30u",heal:"6 Burn/u",note:"Улучшенное ожоговое"},
+{n:"Келотан",e:"Лечит 2 Burn за единицу. Базовое ожоговое.",r:"Кремний [1] + Углерод [1]",od:"нет",heal:"2 Burn/u",note:"Базовое лекарство от ожогов"},
+{n:"Диловен",e:"Антитоксин широкого спектра. Лечит 2 Toxin за единицу. Передозировка вызывает рвоту и головокружение.",r:"Кремний [1] + Калий [1] + Азот [1]",od:"30u",heal:"2 Toxin/u",note:"Основной антидот"},
+{n:"Инапровалин",e:"Синаптический и кардиостимулятор. Снижает урон от удушья в крите, уменьшает кровотечение.",r:"Кислород [1] + Углерод [1] + Сахар [1]",od:"нет",heal:"Стабилизация",note:"Ключевой компонент многих лекарств"},
+{n:"Трикордразин",e:"Универсальное лекарство. Лечит Brute, Burn, Toxin, Airloss понемногу. Безопасен.",r:"Диловен [1] + Инапровалин [1]",od:"нет",heal:"Все типы урона",note:"Порядок важен: сначала Инапровалин, потом Диловен"},
+{n:"Дексалин",e:"Лечит незначительный урон от удушья и кровопотери.",r:"Кислород [1] + Плазма [1]",od:"нет",heal:"Airloss",note:"Плазма — катализатор, не расходуется"},
+{n:"Дексалин Плюс",e:"Продвинутое лечение кислородного голодания. Выводит Heartbreaker Toxin.",r:"Дексалин [1] + Углерод [1] + Железо [1]",od:"нет",heal:"Airloss++",note:"Улучшенная версия Дексалина"},
+{n:"Эпинефрин",e:"Стабилизирует в крите, снижает стан, выводит Heartbreaker Toxin. Может добавить гистамин.",r:"Кислород [1] + Водород [1] + Ацетон [1] + Диэтиламин [1] + Фенол [1] + Хлор [1] + Нагрев >310K",od:"30u",heal:"Стабилизация в крите",note:"Содержится в экстренных медипенах. Lingzhi при помоле даёт эпинефрин"},
+{n:"Аритразин",e:"Лечит 6 Radiation, наносит ~1 Brute (0.33 удар+порез+укол).",r:"Хироналин [1] + Водород [1]",od:"нет",heal:"6 Rad/u",dmg:"~1 Brute/u",note:"Агрессивное анти-рад средство"},
+{n:"Хироналин",e:"Слабый антирад. Лечит 2 Radiation за единицу.",r:"Диловен [1] + Радий [1]",od:"30u",heal:"2 Rad/u",note:"Базовый антирад"},
+{n:"Бруизин",e:"Лечит тупой (Blunt) урон.",r:"Бикаридин [1] + Сахар [1] + Литий [1]",od:"нет",heal:"Blunt",note:"Специализированный препарат"},
+{n:"Сидерлак",e:"Лечит 10 Caustic (кислотный) урон за единицу.",r:"Стеллибинин [1] + Алоэ [1]",od:"нет",heal:"10 Caustic/u",note:"Требует ботанические компоненты"},
+{n:"Стеллибинин",e:"Антитоксин из растений. Безопасен.",r:"Помол Galaxy Thistle (Галактический чертополох)",od:"нет",heal:"Poison (растительный)",note:"Получается только из ботаники"},
+{n:"Транексам��вая кислота",e:"Уменьшает кровотечение. Метаболизм 0.5u/с.",r:"Серная кислота [1] + Сахар [1] + Инапровалин [1]",od:"нет",heal:"Антикровотечение",note:"Критически важна при сильном кровотечении"},
+{n:"Дипенгидрамин",e:"Быстро выводит гистамин, снижает дрожь, вызывает сонливость, лечит Toxin.",r:"Масло [1] + Углерод [1] + Бром [1] + Диэтиламин [1] + Этанол [1]",od:"60u",heal:"Антигистамин",note:"Применяется при аллергии и укусах пчёл"},
+{n:"Эфедрин",e:"Стимулятор: бодрит, снижает стан, ускоряет.",r:"Масло [1] + Водород [1] + Сахар [1] + Диэтиламин [1]",od:"30u",heal:"Антистан",note:"Нестабильный. Получается из Масла"},
+{n:"Лепоразин",e:"Стабилизирует температуру тела.",r:"Плазма [1] + Кремний [1] + Медь [1]",od:"нет",heal:"Терморегуляция",note:"Защищает от жары и холода"},
+{n:"Фалангимин",e:"Лечит 4 клеточного урона, наносит 2 Radiation.",r:"Нестабильный мутаген [1] + Хироналин [1] + Этанол [1]",od:"нет",heal:"4 Cellular/u",dmg:"2 Rad/u",note:"Единственное лекарство от клеточного урона (кроме крио)"},
+{n:"Ипекак",e:"Вызывает рвоту. Удаляет яды из организма.",r:"Диловен [1] + Аммиак [1]",od:"нет",heal:"Очищение организма",note:"Полезен при отравлении"},
+{n:"Пакс",e:"Подавляет агрессию. Не даёт атаковать.",r:"Диловен [1] + Аммиак [1] + Сахар [1] + Нагрев >310K",od:"нет",heal:"Пацификация",note:"Используется СБ для усмирения"},
+{n:"Саллен",e:"Лечит ушибы и порезы, оставляя минимальный ожог.",r:"Бикаридин [1] + Углерод [1] + Хлор [1]",od:"25u",heal:"Brute продвинутый",note:"Продвинутый anti-brute"},
+{n:"Сигинат",e:"Газированный реагент. Лечит проколы (Pierce).",r:"Бикаридин [1] + Углерод [2] + Нагрев >310K",od:"30u",heal:"Pierce",note:"Специализация по проколам"},
+{n:"Опаловерин",e:"Эффективно лечит ожоги от огня.",r:"Дермалин [1] + Углерод [1] + Водород [1] + Нагрев >310K",od:"25u",heal:"Burns++",note:"Очень сильное ожоговое"},
+]},
+{cat:"Крио-медицина",badge:"cryo",items:[
+{n:"Криоксадон",e:"Лечит все стандартные типы урона при температуре ниже 213К. Используется в криокамерах.",r:"Ацетон [1] + Диловен [1] + Нестабильный мутаген [1]",od:"нет",heal:"Все типы урона (при <213К)",note:"Основа криогенной медицины"},
+{n:"Доксарубиксадон",e:"Лечит клеточный урон при температуре ниже 213К.",r:"Криоксадон [1] + Нестабильный мутаген [1]",od:"нет",heal:"4 Cellular (<213К)",note:"Крио-лечение клеточных повреждений"},
+{n:"Биокардин",e:"Криогенное вещество. Лечит тяжёлые ожоги при <213К. Работает на живых и мёртвых.",r:"Криоксадон [1] + Дермалин [1]",od:"нет",heal:"6 Burn, 6 Shock, 2 Caustic (<213К)",note:"Мощнейшее крио-ожоговое средство"},
+{n:"Полидексалин",e:"Криогенное средство от удушья. Работает при <213К.",r:"Криоксадон [1] + Дексалин Плюс [1]",od:"нет",heal:"Airloss (<213К)",note:"Крио-лечение кислородного голодания"},
+]},
+{cat:"Нагреваемые",badge:"med",items:[
+{n:"Ацетон",e:"Промежуточный реагент для многих рецептов.",r:"Масло [1] + Welding Fuel [1] + Кислород [1] + Нагрев >310K",od:"—",heal:"—",note:"Не лекарство, но нужен для многих рецептов"},
+{n:"Масло (Oil)",e:"Промежуточный реагент.",r:"Углерод [1] + Водород [1] + Welding Fuel [1] + Нагрев >310K",od:"—",heal:"—",note:"Базовый промежуточный компонент"},
+{n:"Фенол",e:"Промежуточный реагент. Ароматическое кольцо углерода с гидроксилом.",r:"Вода [1] + Хлор [1] + Масло [1] + Нагрев >310K",od:"—",heal:"—",note:"Прекурсор многих лекарств"},
+{n:"Диэтиламин",e:"Промежуточный реагент для продвинутых лекарств.",r:"Аммиак [1] + Этанол [1] + Нагрев >310K",od:"—",heal:"—",note:"Компонент эфедрина и дипенгидрамина"},
+]},
+{cat:"Промежуточные",badge:"base",items:[
+{n:"Аммиак",e:"Промежуточный реагент. Часть рецепта Space Cleaner.",r:"Водород [3] + Азот [1]",od:"—",heal:"—",note:"Важный базовый компонент"},
+{n:"Серная кислота",e:"Токсичная кислота. Используется в рецептах.",r:"Водород [1] + Кислород [2] + Сера [1]",od:"—",heal:"—",note:"Прекурсор ряда лекарств"},
+{n:"Столовая соль",e:"Хлорид натрия. Нужна для рецептов.",r:"Хлор [1] + Натрий [1] + Нагрев >370K",od:"—",heal:"—",note:"Нагреть выше 370К для реакции"},
+{n:"Нестабильный мутаген",e:"Мутирует растения и существ. Радиоактивен.",r:"Хлор [1] + Фосфор [1] + Радий [1]",od:"—",heal:"—",note:"Ботаники просят каждую смену"},
+{n:"Этанол",e:"Спирт. Базовый компонент многих рецептов.",r:"Доступен в раздатчике",od:"—",heal:"—",note:"Также получается из растений"},
+]},
+{cat:"Токсины и яды",badge:"tox",items:[
+{n:"Хлоралгидрат",e:"Снотворное и седативное. Усыпляет жертву.",r:"Хлор [3] + Этанол [1] + Вода [1]",od:"—",dmg:"Усыпление",note:"Опасен при передозировке"},
+{n:"Токсин",e:"Наносит прямой урон Toxin.",r:"Доступен через раздатчик или плазму",od:"—",dmg:"Toxin",note:"Базовый яд"},
+{n:"Гистамин",e:"Аллергическая реакция. Дрожь, урон. Лечится дипенгидрамином.",r:"Побочный продукт (не синтезируется напрямую)",od:"—",dmg:"Аллергия",note:"Выводится Дипенгидрамином и Эпинефрином"},
+{n:"Аматоксин",e:"Смертельный грибной токсин. Малые дозы летальны.",r:"Помол мухомора (Fly Amanita)",od:"—",dmg:"Lethal Toxin",note:"Из грибов, не синтезируется"},
+{n:"Карпотоксин",e:"Токсин космических карпов. Вызывает жжение.",r:"Из космических карпов (помол)",od:"—",dmg:"Burn + Toxin",note:"Получается от утилизаторов"},
+{n:"Nocturine",e:"Мощное снотворное. Мгновенно усыпляет.",r:"Не синтезируется (трейторский предмет)",od:"—",dmg:"Deep Sleep",note:"Содержится в Sleepy Pen антагонистов"},
+{n:"Heartbreaker Toxin",e:"Яд, выводимый Дексалином+ и Эпинефрином.",r:"Побочный продукт",od:"—",dmg:"Toxin",note:"Выводится Дексалином+ и Эпинефрином"},
+{n:"Mute Toxin",e:"Лишает способности говорить.",r:"Не синтезируется (спец. источники)",od:"—",dmg:"Немота",note:"Антагонистский яд"},
+{n:"Impedrezene",e:"Урон мозгу, замедление реакции.",r:"Кислород [1] + Ртуть [1] + Сахар [1]",od:"—",dmg:"Brain damage",note:"Опасный нейротоксин"},
+{n:"Тетрагидроканнабинол (THC)",e:"Вызывает голод и эйфорию. Слабый наркотик из растений.",r:"Помол конопли",od:"—",dmg:"Голод",note:"Из ботаники"},
+]},
+{cat:"Наркотики",badge:"narc",items:[
+{n:"Космические наркотики (Space Drugs)",e:"Вызывают галлюцинации и головокружение.",r:"Литий [1] + Ртуть [1] + Сахар [1]",od:"нет",dmg:"Hallucinations",note:"Сброс псионики"},
+{n:"Mindbreaker",e:"Сильнее Space Drugs. Мощные галлюцинации.",r:"Диловен [1] + Кремний [1] + Водород [1]",od:"нет",dmg:"Strong Hallucinations",note:"Можно упростить: Si×2 + N + K + H"},
+{n:"Метамфетамин",e:"Мощный стимулятор. Снижает стан, ускоряет. Крайне аддиктивен.",r:"Эфедрин [1] + Водород [1] + Йод [1] + Фосфор [1] + Нагрев >310K",od:"20u",dmg:"Brain + Toxin при OD",note:"Опасная передозировка!"},
+{n:"Ковриний (Carpotoxin+)",e:"Покрывает ковром всё, на что попадёт.",r:"Космические наркотики [1] + Ткань [2]",od:"нет",dmg:"—",note:"Комедийный реагент с планеты клоунов"},
+]},
+{cat:"Пиротехника",badge:"pyro",items:[
+{n:"Welding Fuel",e:"Топливо для сварки. Горючее.",r:"Из топливных баков",od:"—",dmg:"Toxin при приёме",note:"Используется как компонент"},
+{n:"Napalm",e:"Горючая субстанция. Поджигает.",r:"Масло [1] + Welding Fuel [1] + Этанол [1]",od:"—",dmg:"Fire",note:"Не синтезировать в лаборатории!"},
+{n:"ClF3 (Трифторид хлора)",e:"Экстремально горючий и взрывоопасный. Поджигает всё.",r:"Хлор [1] + Фтор [3] + Нагрев >310K",od:"—",dmg:"Extreme Fire",note:"Бомба. Нагреть хлор отдельно, затем смешать"},
+{n:"Thermite",e:"Прожигает стены при поджоге.",r:"Железо [1] + Алюминий [1] + Кислород [1]",od:"—",dmg:"Плавит стены",note:"Нанести на стену, поджечь"},
+{n:"Smoke Powder",e:"Создаёт дымовую завесу.",r:"Калий [1] + Сахар [1] + Фосфор [1]",od:"—",dmg:"—",note:"При смешивании с водой создаёт дым"},
+{n:"Flash Powder",e:"Ослепляющая вспышка.",r:"Алюминий [1] + Калий [1] + Сера [1]",od:"—",dmg:"Flash",note:"Осторожно при смешивании"},
+{n:"Phlogiston",e:"Загорается от контакта с воздухом.",r:"Фосфор [1] + Серная кислота [1] + Нестабильный мутаген [1]",od:"—",dmg:"Self-ignite",note:"Крайне опасен"},
+{n:"Foam",e:"Создаёт пену, распространяющую реагенты.",r:"Фтор [1] + Водород [1]",od:"—",dmg:"—",note:"Смешать с другими реагентами для распространения"},
+{n:"EMP (Электромагнитный импульс)",e:"Выключает электронику.",r:"Железо [1] + Уран [1]",od:"—",dmg:"EMP",note:"Отключает КПК, комм-устройства, борги"},
+]},
+{cat:"Утилитарные",badge:"util",items:[
+{n:"Space Cleaner (Космический очиститель)",e:"Очищает любую поверхность от загрязнений.",r:"Аммиак [1] + Вода [1]",od:"—",heal:"—",note:"Основной инструмент уборщика"},
+{n:"Космическая смазка (Space Lube)",e:"Делает пол скользким.",r:"Вода [1] + Кремний [1] + Кислород [1]",od:"—",dmg:"Скольжение",note:"Любимый реагент клоунов"},
+{n:"Отбеливатель (Bleach)",e:"Сверхмощный очиститель. Токсичен при приёме.",r:"Кислород [1] + Space Cleaner [2] + Столовая соль [2]",od:"—",dmg:"Toxin при приёме",note:"Обеззараживает одежду"},
+{n:"Robust Harvest",e:"Увеличивает размер и силу растений.",r:"Нестабильный мутаген [1] + Вода [3]",od:"—",heal:"Растения",note:"Ключевой реагент для ботаники"},
+{n:"Plant-B-Gone",e:"Гербицид. Убивает растения и сорняки.",r:"Токсин [1] + Вода [4]",od:"—",dmg:"Убивает растения",note:"Для борьбы с сорняками"},
+{n:"Pesticide (EZ-Nutrient)",e:"Питание для растений.",r:"Доступен в ботанике",od:"—",heal:"Растения",note:"Базовое удобрение"},
+{n:"Rat Poison (Крысиный яд)",e:"Убивает крыс.",r:"Токсин [4] + Сахар [1]",od:"—",dmg:"Убивает крыс",note:"Заказ от уборщика"},
+{n:"Lexorin",e:"Парализует дыхательную систему.",r:"Водород [1] + Плазма [1] + Азот [1]",od:"—",dmg:"Asphyxiation",note:"Боевой реагент"},
+{n:"Cognizine",e:"Делает любое неразумное существо разумным.",r:"Не синтезируется стандартно",od:"—",heal:"Разумность",note:"Загадочный реагент"},
+]},
+{cat:"Ботанические",badge:"botan",items:[
+{n:"Алоэ крем (Aloe Cream)",e:"Лечит ожоги при нанесении. Не химическое средство.",r:"Из алоэ вера (помол растений)",od:"—",heal:"Burns (наружно)",note:"Запросить у ботаников"},
+{n:"Линчжи (Lingzhi)",e:"При помоле даёт Эпинефрин.",r:"Помол гриба Линчжи",od:"—",heal:"→ Эпинефрин",note:"Один из самых полезных грибов"},
+{n:"Мак (Poppy)",e:"При съедении лечит немного Brute. При помоле — Бикаридин.",r:"Помол мака",od:"—",heal:"Brute (сырой) / Бикаридин (молотый)",note:"Более эффективен при помоле"},
+{n:"Galaxy Thistle",e:"При помоле даёт Стеллибинин.",r:"Помол галактического чертополоха",od:"—",heal:"→ Стеллибинин",note:"Нужен для Сидерлака"},
+{n:"Алоэ вера",e:"При помоле даёт Алоэ крем.",r:"Помол алоэ",od:"—",heal:"→ Алоэ крем",note:"Основное растение для медицины"},
+]},
+{cat:"Зомби-апокалипсис",badge:"other",items:[
+{n:"Ambuzol",e:"Высокотехнологичный препарат. Останавливает развитие зомби-вируса.",r:"Диловен [1] + Криоксадон [2] + Нагрев >310K",od:"—",heal:"Анти-зомби",note:"Требуется ≥10u для исцеления от вируса"},
+{n:"Ambuzol Plus",e:"Прививка от зомби-вируса для живых.",r:"Ambuzol [1] + Кровь заражённого [1]",od:"—",heal:"Вакцина",note:"Иммунизирует от заражения"},
+]},
+{cat:"Особые",badge:"other",items:[
+{n:"Multiver",e:"Удаляет яды, наркотики, лекарства из организма каждый тик.",r:"Уголь [1] + Столовая соль [1] + Охлаждение <320K",od:"—",heal:"Универсальный антидот",note:"Нужно ≥3 реагента в теле (включая Multiver). Уголь: Углерод + Пепел"},
+{n:"Syriniver",e:"Быстро лечит Toxin за счёт Brute. Создаёт Musiver.",r:"Диловен [1] + Фтор [1] + Серная кислота [1]",od:"6u",heal:"25 Toxin за 5u",dmg:"Brute побочно",note:"Передозировка очень опасна"},
+{n:"Уголь (Charcoal)",e:"Промежуточный для Multiver. Поглощает яды.",r:"Углерод [1] + Пепел [1] (Ash — из крематория или жжёной бумаги)",od:"нет",heal:"Абсорбент ядов",note:"Пепел: ЛКМ по мензурке с пеплом"},
+{n:"Calomel",e:"Быстро выводит токсины при температуре тела >47°C.",r:"Ртуть [1] + Литий [1] + Нагрев >370K",od:"—",heal:"Agressive detox",note:"Вещество с сервера Goob Station"},
+{n:"Saline (Физраствор)",e:"Восстанавливает кровь, уменьшает кровотечение.",r:"Вода [80] + Столовая соль [20]",od:"—",heal:"Кровопотеря",note:"Крупная партия: 80 воды + 20 соли"},
+{n:"Hyronalin+",e:"Снижает урон от радиации на 90%. Только профилактика.",r:"Хироналин [1] + Диловен [1] + Нагрев >310K",od:"нет",heal:"Антирад -90%",note:"Использовать ДО облучения"},
+{n:"Ultravasculine",e:"Лечит Asphyxiation и Brute, останавливает кровотечение. Замедляет.",r:"Инапровалин [2] + Железо [1] + Медь [1] + Нагрев >310K",od:"нет",heal:"Brute + Asphyx + кровотечение",note:"Пурпурная жидкость, побочка — замедление"},
+{n:"Bicaridine Plus (Saline-enhanced)",e:"Продвинутое лечение крови с транексамовой кислотой.",r:"Saline [100] + Транексамовая кислота [10] + Железо [5] + Медь [5] + Нагрев >310K",od:"—",heal:"Кровь + Anti-bleed",note:"Комплексный рецепт"},
+]},
+{cat:"Элементы (Раздатчик)",badge:"base",items:[
+{n:"Алюминий (Al)",e:"Серебристый, мягкий, немагнитный, ковкий металл.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для термита, Flash Powder"},
+{n:"Углерод (C)",e:"Чёрное кристаллическое твёрдое вещество.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Один из самых используемых"},
+{n:"Хлор (Cl)",e:"Жёлто-зелёный токсичный газ.",r:"Раздатчик химикатов",od:"—",dmg:"Toxin при приёме",note:"Для солей, ClF3"},
+{n:"Медь (Cu)",e:"Мягкий, ковкий металл с высокой электропроводностью.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для Лепоразина"},
+{n:"Фтор (F)",e:"Высокотоксичный бледно-жёлтый газ. Крайне реактивен.",r:"Раздатчик химикатов",od:"—",dmg:"Toxin + Burn",note:"Для ClF3, Foam"},
+{n:"Водород (H)",e:"Лёгкий горючий газ.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Универсальный компонент"},
+{n:"Йод (I)",e:"Добавка к столовой соли как питательное вещество.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для метамфетамина"},
+{n:"Железо (Fe)",e:"Помогает медленно восстанавливать кровь.",r:"Раздатчик химикатов",od:"—",heal:"0.8 крови/цикл",note:"Полезно при кровопотере"},
+{n:"Литий (Li)",e:"Мягкий серебристо-белый металл. Вызывает подёргивания.",r:"Раздатчик химикатов",od:"—",dmg:"Twitching",note:"Для Space Drugs, Бруизина"},
+{n:"Ртуть (Hg)",e:"Жидкий металл. 70% шанс урона мозгу.",r:"Раздатчик химикатов",od:"—",dmg:"Brain damage",note:"Для Space Drugs, Impedrezene"},
+{n:"Азот (N)",e:"Бесцветный газ.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для Диловена, Аммиака"},
+{n:"Кислород (O)",e:"Бесцветный газ, необходимый для дыхания.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Универсальный компонент"},
+{n:"Фосфор (P)",e:"Реактивный металл для пиротехники.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для Дермалина, дыма"},
+{n:"Калий (K)",e:"Мягкий серый блестящий металл. Реактивнее лития.",r:"Раздатчик химикатов",od:"—",dmg:"Взрыв с водой!",note:"НЕ смешивать с водой!"},
+{n:"Радий (Ra)",e:"Радиоактивный светящийся металл. Высокотоксичен.",r:"Раздатчик химикатов",od:"—",dmg:"4 Radiation",note:"Для мутагена, Хироналина"},
+{n:"Кремний (Si)",e:"Твёрдое кристаллическое вещество с голубовато-серым цветом.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для Келотана, Диловена, Смазки"},
+{n:"Серебро (Ag)",e:"Мягкий белый блестящий переходный металл.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Редко используется в рецептах"},
+{n:"Натрий (Na)",e:"Серебристо-белый щелочной металл. Высокореактивен.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для столовой соли"},
+{n:"Сера (S)",e:"Жёлтое кристаллическое вещество.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для серной кислоты, Flash Powder"},
+{n:"Плазма",e:"Наносит 1 Toxin. Катализатор (не расходуется в реакциях).",r:"Утилизаторы / деконструкция / карго",od:"—",dmg:"1 Toxin/u",note:"Нужно отделять после реакции!"},
+{n:"Сахар",e:"Даёт питание. Редкий шанс распада в эпинефрин.",r:"Раздатчик химикатов",od:"200u",heal:"Питание",note:"Передозировка — диабетический шок"},
+{n:"Вода",e:"Универсальный растворитель.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Основа многих рецептов"},
+{n:"Этанол",e:"Спирт. Вызывает опьянение.",r:"Раздатчик химикатов",od:"—",dmg:"Опьянение",note:"Компонент многих рецептов"},
+{n:"Бром (Br)",e:"Красно-коричневая жидкость.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для Дипенгидрамина"},
+{n:"Уран (U)",e:"Серый металлический элемент. Слаборадиоактивен.",r:"Помол урановой руды (шахтёры)",od:"—",dmg:"2 Radiation",note:"Для EMP"},
+]},
+];
+const svgIcons={
+med:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#3fb950"><path d="M6.5 1h3a1 1 0 0 1 1 1v3h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-3v3a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-3h-3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h3V2a1 1 0 0 1 1-1Z"/></svg>',
+tox:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#f85149"><path d="M8 1a1 1 0 0 1 .867.5l6.928 12A1 1 0 0 1 14.928 15H1.072a1 1 0 0 1-.867-1.5l6.928-12A1 1 0 0 1 8 1Zm0 3.5a.75.75 0 0 0-.75.75v4a.75.75 0 0 0 1.5 0v-4A.75.75 0 0 0 8 4.5ZM8 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg>',
+util:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#d29922"><path d="M7.429.87a.5.5 0 0 1 .713.13L9.07 2.307a.5.5 0 0 1-.128.664L8 3.594V5h3a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1.5V3.594l-.942-.623a.5.5 0 0 1-.128-.664L6.716 1a.5.5 0 0 1 .713-.13Z"/></svg>',
+narc:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#bc8cff"><circle cx="8" cy="8" r="7" stroke="#bc8cff" stroke-width="1.5" fill="none"/><path d="M5 8h6M8 5v6" stroke="#bc8cff" stroke-width="1.5" stroke-linecap="round"/></svg>',
+pyro:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#ff7b72"><path d="M8 1c.5 2 3 4 3 7a4 4 0 0 1-3 3.86A4 4 0 0 1 5 8c0-1.5.5-2.5 1-3.5S7.5 2 8 1Z"/></svg>',
+cryo:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#39d2c0"><path d="M8 1v14M3 4l5 4-5 4M13 4L8 8l5 4" stroke="#39d2c0" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+base:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#8b949e"><circle cx="8" cy="8" r="3" stroke="#8b949e" stroke-width="1.5" fill="none"/><circle cx="8" cy="2" r="1.5" fill="#8b949e"/><circle cx="8" cy="14" r="1.5" fill="#8b949e"/><circle cx="2" cy="8" r="1.5" fill="#8b949e"/><circle cx="14" cy="8" r="1.5" fill="#8b949e"/></svg>',
+botan:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#56d364"><path d="M8 14V6M5 3c0 2 1 3 3 4 2-1 3-2 3-4-1.5 0-2.5 1-3 2-.5-1-1.5-2-3-2ZM5 8c0 2 1 3 3 4 2-1 3-2 3-4-1.5 0-2.5 1-3 2-.5-1-1.5-2-3-2Z"/></svg>',
+other:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#f778ba"><path d="M8 1l2 4h4l-3 3 1 5-4-2-4 2 1-5-3-3h4Z"/></svg>'
 };
-
-let timerInterval = null;
-
-function initBoard() {
-  const b = Array.from({length:8}, ()=>Array(8).fill(0));
-  // Игрок 2 (белые) — верхние 3 ряда (ряды 0-2)
-  for (let r=0;r<3;r++)
-    for (let c=0;c<8;c++)
-      if ((r+c)%2===1) b[r][c] = 2;
-  // Игрок 1 (красные) — нижние 3 ряда (ряды 5-7)
-  for (let r=5;r<8;r++)
-    for (let c=0;c<8;c++)
-      if ((r+c)%2===1) b[r][c] = 1;
-  return b;
+let activeTab="all";
+function renderTabs(){
+const t=document.getElementById("tabs");
+let total=0;
+DB.forEach(c=>total+=c.items.length);
+let h=`<div class="tab active" data-cat="all">Все <span class="count">${total}</span></div>`;
+DB.forEach(c=>{h+=`<div class="tab" data-cat="${c.cat}">${svgIcons[c.badge]||""} ${c.cat} <span class="count">${c.items.length}</span></div>`});
+t.innerHTML=h;
+document.getElementById("totalCount").textContent=total;
+document.getElementById("catCount").textContent=DB.length;
+t.querySelectorAll(".tab").forEach(tab=>{
+tab.addEventListener("click",()=>{
+t.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+tab.classList.add("active");
+activeTab=tab.dataset.cat;
+renderCards();
+})
+})
 }
-
-function cloneBoard(b) { return b.map(r=>[...r]); }
-
-function ownerOf(piece) {
-  if (piece === 1 || piece === 3) return 1;
-  if (piece === 2 || piece === 4) return 2;
-  return 0;
-}
-function isKing(piece) { return piece === 3 || piece === 4; }
-
-// ─────────────────────────────────────
-// ЛОГИКА РУССКИХ ШАШЕК
-// ─────────────────────────────────────
-
-// Получить все возможные ходы для шашки (row,col)
-function getMovesForPiece(board, row, col, onlyCaptures=false) {
-  const piece = board[row][col];
-  const owner = ownerOf(piece);
-  if (!owner) return [];
-  const king = isKing(piece);
-  const moves = [];
-
-  if (king) {
-    // Дамка — ходит/бьёт по диагонали на любое расстояние
-    const dirs = [[-1,-1],[-1,1],[1,-1],[1,1]];
-    for (const [dr,dc] of dirs) {
-      let r=row+dr, c=col+dc;
-      let foundEnemy = null;
-      while (r>=0 && r<8 && c>=0 && c<8) {
-        const cell = board[r][c];
-        if (ownerOf(cell) === owner) break; // свои — стоп
-        if (ownerOf(cell) !== 0 && ownerOf(cell) !== owner) {
-          if (foundEnemy) break; // вторая вражеская — стоп
-          foundEnemy = {row:r, col:c};
-          r+=dr; c+=dc;
-          continue;
-        }
-        // Пустая клетка
-        if (foundEnemy) {
-          // Взятие — можно приземлиться
-          moves.push({row:r, col:c, captures:[foundEnemy], isCapture:true});
-        } else if (!onlyCaptures) {
-          // Обычный ход
-          moves.push({row:r, col:c, captures:[], isCapture:false});
-        }
-        r+=dr; c+=dc;
-      }
-    }
-  } else {
-    // Обычная шашка
-    const fwd = (owner===1) ? -1 : 1;
-    // Обычные ходы (только вперёд)
-    if (!onlyCaptures) {
-      for (const dc of [-1,1]) {
-        const nr=row+fwd, nc=col+dc;
-        if (nr>=0 && nr<8 && nc>=0 && nc<8 && board[nr][nc]===0) {
-          moves.push({row:nr, col:nc, captures:[], isCapture:false});
-        }
-      }
-    }
-    // Взятия (вперёд И назад)
-    for (const dr of [-1,1]) {
-      for (const dc of [-1,1]) {
-        const mr=row+dr, mc=col+dc;
-        const lr=row+2*dr, lc=col+2*dc;
-        if (lr>=0 && lr<8 && lc>=0 && lc<8) {
-          const mid = board[mr][mc];
-          if (ownerOf(mid)!==0 && ownerOf(mid)!==owner && board[lr][lc]===0) {
-            moves.push({row:lr, col:lc, captures:[{row:mr,col:mc}], isCapture:true});
-          }
-        }
-      }
-    }
-  }
-  return moves;
-}
-
-// Найти все цепочки взятий для шашки (рекурсивно)
-function getCaptureChains(board, row, col, alreadyCaptured=[]) {
-  const captures = getMovesForPiece(board, row, col, true);
-  // Фильтруем: не бить уже сбитую шашку (для серии)
-  const valid = captures.filter(m => {
-    return !m.captures.some(c => alreadyCaptured.some(a => a.row===c.row && a.col===c.col));
-  });
-
-  if (valid.length === 0) {
-    return alreadyCaptured.length > 0 ? [{ row, col, totalCaptures: [...alreadyCaptured] }] : [];
-  }
-
-  const chains = [];
-  for (const m of valid) {
-    const newBoard = cloneBoard(board);
-    const piece = newBoard[row][col];
-    newBoard[row][col] = 0;
-    for (const c of m.captures) newBoard[c.row][c.col] = 0;
-    newBoard[m.row][m.col] = piece;
-    const newCaptured = [...alreadyCaptured, ...m.captures];
-    const subChains = getCaptureChains(newBoard, m.row, m.col, newCaptured);
-    if (subChains.length === 0) {
-      chains.push({ row:m.row, col:m.col, totalCaptures: newCaptured });
-    } else {
-      chains.push(...subChains);
-    }
-  }
-  return chains;
-}
-
-// Все допустимые ходы для игрока
-function getAllMoves(board, player) {
-  const allCaptures = [];
-  const allSimple = [];
-
-  for (let r=0;r<8;r++) {
-    for (let c=0;c<8;c++) {
-      if (ownerOf(board[r][c]) !== player) continue;
-      // Цепочки взятий
-      const chains = getCaptureChains(board, r, c);
-      for (const ch of chains) {
-        allCaptures.push({ from:{row:r,col:c}, to:{row:ch.row,col:ch.col}, captures:ch.totalCaptures, isCapture:true });
-      }
-      // Простые ходы
-      const simple = getMovesForPiece(board, r, c, false).filter(m=>!m.isCapture);
-      for (const s of simple) {
-        allSimple.push({ from:{row:r,col:c}, to:{row:s.row,col:s.col}, captures:[], isCapture:false });
-      }
-    }
-  }
-
-  // Обязательное взятие: если есть хоть одно взятие — разрешены только взятия
-  if (allCaptures.length > 0) {
-    // Правило: выбираем максимальную длину цепочки? В русских шашках
-    // НЕ обязательно бить максимум, но обязательно бить. Оставляем все взятия.
-    return { moves: allCaptures, mustCapture: true };
-  }
-  return { moves: allSimple, mustCapture: false };
-}
-
-// Получить ходы конкретной шашки с учётом обязательного взятия
-function getMovesFor(board, row, col, player) {
-  const {moves, mustCapture} = getAllMoves(board, player);
-  return {
-    moves: moves.filter(m => m.from.row===row && m.from.col===col),
-    mustCapture
-  };
-}
-
-// Промотирование в дамку
-function shouldCrown(piece, row) {
-  if (piece===1 && row===0) return 3;
-  if (piece===2 && row===7) return 4;
-  return piece;
-}
-
-// Проверка конца игры
-function checkGameOver(board, nextPlayer) {
-  const {moves} = getAllMoves(board, nextPlayer);
-  if (moves.length === 0) return true;
-  // Проверить есть ли шашки
-  let has = false;
-  for (let r=0;r<8;r++) for (let c=0;c<8;c++) if (ownerOf(board[r][c])===nextPlayer) has=true;
-  return !has;
-}
-
-// Валидация хода
-function validateMove(board, player, from, to, captures) {
-  const {moves} = getAllMoves(board, player);
-  return moves.some(m =>
-    m.from.row===from.row && m.from.col===from.col &&
-    m.to.row===to.row && m.to.col===to.col &&
-    m.captures.length===captures.length &&
-    m.captures.every((c,i)=>c.row===captures[i].row && c.col===captures[i].col)
-  );
-}
-
-// Применить ход
-function applyMove(board, from, to, captures) {
-  const b = cloneBoard(board);
-  let piece = b[from.row][from.col];
-  b[from.row][from.col] = 0;
-  for (const c of captures) b[c.row][c.col] = 0;
-  piece = shouldCrown(piece, to.row);
-  b[to.row][to.col] = piece;
-  return { board: b, crowned: isKing(piece) && !isKing(board[from.row][from.col]) };
-}
-
-// ─────────────────────────────────────
-// РЕНДЕР ДОСКИ
-// ─────────────────────────────────────
-const boardEl = $('board');
-
-function renderBoard() {
-  boardEl.innerHTML = '';
-  const flipped = (!gameState.isLocal && gameState.myColor === 2);
-
-  for (let ri=0; ri<8; ri++) {
-    for (let ci=0; ci<8; ci++) {
-      const r = flipped ? 7-ri : ri;
-      const c = flipped ? 7-ci : ci;
-
-      const cell = document.createElement('div');
-      cell.className = 'cell ' + ((r+c)%2===0 ? 'light' : 'dark');
-      cell.dataset.row = r;
-      cell.dataset.col = c;
-
-      // Подсветка выбранной
-      if (gameState.selected && gameState.selected.row===r && gameState.selected.col===c) {
-        cell.classList.add('selected');
-      }
-
-      // Подсветка возможных ходов
-      if (gameState.validMoves.some(m=>m.to.row===r && m.to.col===c)) {
-        cell.classList.add('highlight');
-      }
-
-      // Шашка
-      const piece = gameState.board[r][c];
-      if (piece) {
-        const p = document.createElement('div');
-        p.className = 'piece ' + (ownerOf(piece)===1 ? 'p1' : 'p2');
-        if (isKing(piece)) p.classList.add('king');
-        if (gameState.selected && gameState.selected.row===r && gameState.selected.col===c) {
-          p.classList.add('selected');
-        }
-        cell.appendChild(p);
-      }
-
-      cell.addEventListener('click', ()=>onCellClick(r,c));
-      boardEl.appendChild(cell);
-    }
-  }
-
-  updateUI();
-}
-
-function updateUI() {
-  const isMyTurn = gameState.turn === gameState.myColor;
-  const oppColor = gameState.myColor === 1 ? 2 : 1;
-
-  // Инфо-бары
-  $('dotPlayer').style.background = gameState.myColor===1 ? 'var(--p1)' : 'var(--p2)';
-  $('dotOpponent').style.background = oppColor===1 ? 'var(--p1)' : 'var(--p2)';
-  $('namePlayer').textContent = gameState.myColor===1 ? 'Вы (красные)' : 'Вы (белые)';
-  $('nameOpponent').textContent = gameState.isLocal
-    ? (gameState.turn===1 ? '← Ход красных' : '← Ход белых')
-    : (oppColor===1 ? 'Противник (красные)' : 'Противник (белые)');
-
-  $('barPlayer').className = 'player-bar' + (isMyTurn && !gameState.isLocal ? ' active-turn' : '') +
-    (gameState.isLocal && gameState.turn===gameState.myColor ? ' active-turn' : '');
-  $('barOpponent').className = 'player-bar' + (!isMyTurn && !gameState.isLocal ? ' active-turn' : '') +
-    (gameState.isLocal && gameState.turn!==gameState.myColor ? ' active-turn' : '');
-
-  $('capturedPlayer').textContent = '×' + (gameState.myColor===1 ? gameState.captured1 : gameState.captured2);
-  $('capturedOpponent').textContent = '×' + (gameState.myColor===1 ? gameState.captured2 : gameState.captured1);
-
-  // Таймеры
-  $('timerPlayer').textContent = gameState.timerPlayer;
-  $('timerOpponent').textContent = gameState.timerOpponent;
-  $('timerPlayer').className = 'timer' + (gameState.timerPlayer <= 10 && isMyTurn ? ' urgent' : '');
-  $('timerOpponent').className = 'timer' + (gameState.timerOpponent <= 10 && !isMyTurn ? ' urgent' : '');
-}
-
-// ─────────────────────────────────────
-// ОБРАБОТКА КЛИКОВ ПО ДОСКЕ
-// ─────────────────────────────────────
-function onCellClick(row, col) {
-  if (gameState.gameOver) return;
-
-  const canPlay = gameState.isLocal || (gameState.turn === gameState.myColor);
-  if (!canPlay) return;
-
-  const currentPlayer = gameState.isLocal ? gameState.turn : gameState.myColor;
-  const piece = gameState.board[row][col];
-
-  // Если есть цепочка взятий в процессе
-  if (gameState.chainPiece) {
-    // Можно кликнуть только на допустимое поле для продолжения
-    const mv = gameState.validMoves.find(m=>m.to.row===row && m.to.col===col);
-    if (mv) {
-      executeMove(mv, currentPlayer);
-    }
-    return;
-  }
-
-  // Клик по подсвеченной клетке — ход
-  const mv = gameState.validMoves.find(m=>m.to.row===row && m.to.col===col);
-  if (mv) {
-    sndClick();
-    executeMove(mv, currentPlayer);
-    return;
-  }
-
-  // Клик по своей шашке — выбрать
-  if (ownerOf(piece) === currentPlayer) {
-    sndClick();
-    const {moves, mustCapture} = getMovesFor(gameState.board, row, col, currentPlayer);
-    gameState.selected = {row, col};
-    gameState.validMoves = moves;
-    gameState.mustCapture = mustCapture;
-    renderBoard();
-    return;
-  }
-
-  // Клик по пустой / чужой — сбросить выбор
-  gameState.selected = null;
-  gameState.validMoves = [];
-  renderBoard();
-}
-
-function executeMove(mv, player) {
-  const {board:newBoard, crowned} = applyMove(gameState.board, mv.from, mv.to, mv.captures);
-  const captureCount = mv.captures.length;
-
-  // Звуки
-  if (captureCount > 0) sndCapture(); else sndMove();
-
-  // Обновляем счётчик взятий
-  if (player === 1) gameState.captured1 += captureCount;
-  else gameState.captured2 += captureCount;
-
-  gameState.board = newBoard;
-  gameState.selected = null;
-  gameState.validMoves = [];
-  gameState.chainPiece = null;
-
-  // Лог хода
-  logMove(player, mv.from, mv.to, captureCount, crowned);
-
-  // Отправляем ход по сети
-  if (!gameState.isLocal) {
-    sendData({
-      type:'move',
-      from: mv.from,
-      to: mv.to,
-      captured: mv.captures,
-      crowned: crowned
-    });
-  }
-
-  // Проверка конца серии взятий (для простой шашки с захватом):
-  // На самом деле в нашей системе цепочки уже полностью вычислены
-  // (getAllMoves считает полные цепочки), поэтому один ход = полная цепочка.
-
-  // Смена хода
-  resetTimer();
-  gameState.turn = player === 1 ? 2 : 1;
-
-  // В локальном режиме меняем myColor для правильной подсветки
-  if (gameState.isLocal) {
-    gameState.myColor = gameState.turn;
-  }
-
-  // Проверка конца игры
-  if (checkGameOver(gameState.board, gameState.turn)) {
-    endGame(player === gameState.myColor ? 'win' :
-      (gameState.isLocal ? (player===1 ? 'winRed' : 'winWhite') : 'lose'));
-    return;
-  }
-
-  renderBoard();
-}
-
-function logMove(player, from, to, captures, crowned) {
-  gameState.moveNum++;
-  const letters = 'abcdefgh';
-  const fromStr = letters[from.col] + (8-from.row);
-  const toStr = letters[to.col] + (8-to.row);
-  const sep = captures > 0 ? ':' : '-';
-  const crownMark = crowned ? '(Д)' : '';
-  const color = player === 1 ? '🔴' : '⚪';
-  const entry = document.createElement('div');
-  entry.textContent = `${gameState.moveNum}. ${color} ${fromStr}${sep}${toStr} ${captures>0?'×'+captures:''} ${crownMark}`;
-  $('moveLog').appendChild(entry);
-  $('moveLog').scrollTop = $('moveLog').scrollHeight;
-}
-
-// ─────────────────────────────────────
-// ТАЙМЕР ХОДА (60 секунд)
-// ─────────────────────────────────────
-function resetTimer() {
-  gameState.timerPlayer = 60;
-  gameState.timerOpponent = 60;
-}
-
-function startTimer() {
-  stopTimer();
-  timerInterval = setInterval(()=> {
-    if (gameState.gameOver) { stopTimer(); return; }
-    const isMyTurn = gameState.turn === gameState.myColor;
-    if (isMyTurn) {
-      gameState.timerPlayer--;
-      if (gameState.timerPlayer <= 0) {
-        // Время вышло — автопоражение
-        if (!gameState.isLocal) {
-          sendData({type:'resign'});
-          endGame('lose');
-        } else {
-          endGame(gameState.turn===1 ? 'winWhite' : 'winRed');
-        }
-      }
-    } else if (!gameState.isLocal) {
-      gameState.timerOpponent--;
-      // Не наказываем оппонента — он управляет своим таймером сам
-    }
-    updateUI();
-  }, 1000);
-}
-
-function stopTimer() {
-  if (timerInterval) { clearInterval(timerInterval); timerInterval=null; }
-}
-
-// ─────────────────────────────────────
-// КОНЕЦ ИГРЫ
-// ─────────────────────────────────────
-function endGame(result) {
-  gameState.gameOver = true;
-  stopTimer();
-
-  const el = $('resultText');
-  const sub = $('resultSub');
-
-  if (result === 'win') {
-    el.textContent = 'ПОБЕДА'; el.className = 'result-text win';
-    sub.textContent = 'Противник повержен'; sndWin();
-    const s=loadStats(); s.w++; saveStats(s);
-  } else if (result === 'lose') {
-    el.textContent = 'ПОРАЖЕНИЕ'; el.className = 'result-text lose';
-    sub.textContent = 'В другой раз повезёт'; sndLose();
-    const s=loadStats(); s.l++; saveStats(s);
-  } else if (result === 'draw') {
-    el.textContent = 'НИЧЬЯ'; el.className = 'result-text draw';
-    sub.textContent = 'Достойная партия';
-    const s=loadStats(); s.d++; saveStats(s);
-  } else if (result === 'disconnect') {
-    el.textContent = 'ПОБЕДА'; el.className = 'result-text win';
-    sub.textContent = 'Противник отключился';
-    const s=loadStats(); s.w++; saveStats(s);
-  } else if (result === 'winRed') {
-    el.textContent = 'КРАСНЫЕ ПОБЕДИЛИ'; el.className = 'result-text win';
-    sub.textContent = ''; sndWin();
-  } else if (result === 'winWhite') {
-    el.textContent = 'БЕЛЫЕ ПОБЕДИЛИ'; el.className = 'result-text lose';
-    sub.textContent = ''; sndWin();
-  }
-
-  show('screenResult');
-  displayStats();
-}
-
-// ─────────────────────────────────────
-// СЕТЬ — PeerJS
-// ─────────────────────────────────────
-let peer = null;
-let conn = null;
-let roomCode = '';
-let isHost = false;
-let pingInterval = null;
-let lastPingTime = 0;
-let reconnectAttempts = 0;
-const MAX_RECONNECT = 3;
-
-function getPeerConfig() {
-  const host = $('inputHost').value.trim() || '0.peerjs.com';
-  const port = parseInt($('inputPort').value.trim()) || 443;
-  const path = $('inputPath').value.trim() || '/';
-  return { host, port, path, secure: port===443, debug: 1 };
-}
-
-function initPeer(id) {
-  if (peer) { peer.destroy(); }
-  const cfg = getPeerConfig();
-  console.log('[PeerJS] Подключение к', cfg.host, ':', cfg.port);
-  peer = new Peer(id || undefined, cfg);
-
-  peer.on('open', (myId) => {
-    console.log('[PeerJS] Подключен, ID:', myId);
-    $('statusDot').classList.add('online');
-    $('statusText').textContent = 'Подключен к серверу';
-    $('btnCreate').disabled = false;
-    $('btnJoin').disabled = false;
-  });
-
-  peer.on('error', (err) => {
-    console.error('[PeerJS] Ошибка:', err.type, err);
-    $('statusDot').classList.remove('online');
-    if (err.type === 'peer-unavailable') {
-      toast('Комната не найдена!');
-      $('statusText').textContent = 'Комната не найдена';
-    } else if (err.type === 'unavailable-id') {
-      // ID занят, генерируем новый
-      initPeer('CHKRS-' + genCode() + '-' + genCode());
-    } else {
-      $('statusText').textContent = 'Ошибка: ' + err.type;
-    }
-  });
-
-  peer.on('disconnected', () => {
-    console.log('[PeerJS] Отключён от сервера');
-    $('statusDot').classList.remove('online');
-    $('statusText').textContent = 'Отключён от сервера';
-    // Пытаемся переподключиться
-    if (!peer.destroyed) peer.reconnect();
-  });
-
-  peer.on('connection', (c) => {
-    console.log('[PeerJS] Входящее подключение от:', c.peer);
-    if (conn) { c.close(); return; } // уже есть соединение
-    conn = c;
-    setupConnection();
-  });
-}
-
-function setupConnection() {
-  conn.on('open', () => {
-    console.log('[NET] Соединение установлено');
-    toast('Противник подключился!');
-    reconnectAttempts = 0;
-    startGame();
-    startPing();
-  });
-
-  conn.on('data', (data) => {
-    handleMessage(data);
-  });
-
-  conn.on('close', () => {
-    console.log('[NET] Соединение закрыто');
-    stopPing();
-    if (!gameState.gameOver) {
-      handleDisconnect();
-    }
-  });
-
-  conn.on('error', (err) => {
-    console.error('[NET] Ошибка соединения:', err);
-  });
-}
-
-function handleDisconnect() {
-  reconnectAttempts++;
-  if (reconnectAttempts <= MAX_RECONNECT) {
-    toast(`Соединение потеряно. Попытка ${reconnectAttempts}/${MAX_RECONNECT}...`);
-    // Ждём переподключения
-    setTimeout(() => {
-      if (!conn || !conn.open) {
-        if (reconnectAttempts < MAX_RECONNECT) {
-          handleDisconnect();
-        } else {
-          endGame('disconnect');
-        }
-      }
-    }, 3000);
-  } else {
-    endGame('disconnect');
-  }
-}
-
-function sendData(data) {
-  if (conn && conn.open) {
-    conn.send(data);
-    console.log('[NET] Отправлено:', data.type);
-  }
-}
-
-function handleMessage(data) {
-  console.log('[NET] Получено:', data.type);
-
-  switch(data.type) {
-    case 'move':
-      // Валидация хода
-      if (!validateMove(gameState.board, gameState.turn, data.from, data.to, data.captured)) {
-        console.error('[NET] Невалидный ход от противника!');
-        toast('Обнаружен невалидный ход!');
-        return;
-      }
-      // Применяем ход
-      const {board:nb, crowned} = applyMove(gameState.board, data.from, data.to, data.captured);
-      const captCount = data.captured.length;
-      if (captCount>0) sndCapture(); else sndMove();
-      if (gameState.turn===1) gameState.captured1 += captCount;
-      else gameState.captured2 += captCount;
-      gameState.board = nb;
-      logMove(gameState.turn, data.from, data.to, captCount, crowned);
-      resetTimer();
-      gameState.turn = gameState.turn===1 ? 2 : 1;
-      gameState.selected = null;
-      gameState.validMoves = [];
-      gameState.chainPiece = null;
-      // Проверка конца игры
-      if (checkGameOver(gameState.board, gameState.turn)) {
-        endGame(gameState.turn===gameState.myColor ? 'lose' : 'win');
-      }
-      renderBoard();
-      vibrate();
-      notifyMove();
-      break;
-
-    case 'resign':
-      endGame('win');
-      break;
-
-    case 'draw_offer':
-      showModal('Противник предлагает ничью', [
-        {text:'Принять', action:()=>{sendData({type:'draw_accept'}); endGame('draw'); hideModal();}},
-        {text:'Отклонить', action:()=>{sendData({type:'draw_decline'}); hideModal();}}
-      ]);
-      break;
-
-    case 'draw_accept':
-      endGame('draw');
-      break;
-
-    case 'draw_decline':
-      toast('Противник отклонил ничью');
-      break;
-
-    case 'rematch_offer':
-      showModal('Противник предлагает реванш', [
-        {text:'Принять', action:()=>{sendData({type:'rematch_accept'}); startRematch(); hideModal();}},
-        {text:'Отклонить', action:()=>{hideModal();}}
-      ]);
-      break;
-
-    case 'rematch_accept':
-      startRematch();
-      break;
-
-    case 'ping':
-      sendData({type:'pong', time:data.time});
-      break;
-
-    case 'pong':
-      const ping = Date.now() - data.time;
-      $('pingDisplay').textContent = `Пинг: ${ping}ms`;
-      break;
-  }
-}
-
-// Пинг
-function startPing() {
-  stopPing();
-  pingInterval = setInterval(()=>{
-    sendData({type:'ping', time:Date.now()});
-  }, 5000);
-}
-function stopPing() {
-  if (pingInterval) { clearInterval(pingInterval); pingInterval=null; }
-}
-
-// ─────────────────────────────────────
-// МОДАЛЬНОЕ ОКНО
-// ─────────────────────────────────────
-function showModal(text, buttons) {
-  $('modalText').textContent = text;
-  const bc = $('modalButtons');
-  bc.innerHTML = '';
-  for (const b of buttons) {
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-sm';
-    btn.textContent = b.text;
-    btn.addEventListener('click', b.action);
-    bc.appendChild(btn);
-  }
-  show('modal');
-}
-function hideModal() { hide('modal'); }
-
-// ─────────────────────────────────────
-// НАВИГАЦИЯ ЭКРАНОВ
-// ─────────────────────────────────────
-function showScreen(name) {
-  hide('screenLobby'); hide('screenWaiting'); hide('screenGame'); hide('screenResult');
-  show('screen' + name);
-}
-
-// ─────────────────────────────────────
-// СОЗДАТЬ КОМНАТУ
-// ─────────────────────────────────────
-$('btnCreate').addEventListener('click', () => {
-  sndClick();
-  roomCode = genCode();
-  const peerId = 'CHKRS-' + roomCode;
-  isHost = true;
-  console.log('[ROOM] Создаю комнату:', roomCode, '→ PeerID:', peerId);
-
-  // Пересоздаём пир с нужным ID
-  if (peer) peer.destroy();
-  const cfg = getPeerConfig();
-  peer = new Peer(peerId, cfg);
-
-  peer.on('open', () => {
-    console.log('[ROOM] Зарегистрирован как', peerId);
-    $('roomCodeDisplay').textContent = roomCode;
-    showScreen('Waiting');
-  });
-
-  peer.on('error', (err) => {
-    console.error('[ROOM] Ошибка:', err);
-    if (err.type === 'unavailable-id') {
-      toast('Код занят, попробуйте ещё раз');
-      roomCode = genCode();
-      $('btnCreate').click();
-    } else {
-      toast('Ошибка: ' + err.type);
-    }
-  });
-
-  peer.on('connection', (c) => {
-    console.log('[ROOM] Подключился игрок:', c.peer);
-    conn = c;
-    setupConnection();
-  });
+function renderCards(){
+const q=document.getElementById("searchInput").value.toLowerCase().trim();
+const g=document.getElementById("grid");
+const nr=document.getElementById("noResults");
+let html="";
+let count=0;
+DB.forEach(cat=>{
+if(activeTab!=="all"&&cat.cat!==activeTab)return;
+cat.items.forEach(item=>{
+const searchStr=(item.n+" "+item.e+" "+item.r+" "+(item.note||"")).toLowerCase();
+if(q&&!searchStr.includes(q))return;
+count++;
+const icon=svgIcons[cat.badge]||svgIcons.base;
+const badgeCls="badge-"+cat.badge;
+let meta="";
+if(item.heal&&item.heal!=="—")meta+=`<div class="meta-item heal"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M6.5 3h3v3h3v3h-3v3h-3V9h-3V6h3Z"/></svg>${item.heal}</div>`;
+if(item.dmg)meta+=`<div class="meta-item dmg"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a1 1 0 0 1 .867.5l6 10.5A1 1 0 0 1 14 13.5H2a1 1 0 0 1-.867-1.5l6-10.5A1 1 0 0 1 8 1Z"/></svg>${item.dmg}</div>`;
+if(item.od&&item.od!=="—"&&item.od!=="нет")meta+=`<div class="meta-item od"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>OD: ${item.od}</div>`;
+html+=`<div class="card"><div class="card-head"><div class="card-title">${icon} ${item.n}</div><div class="badge ${badgeCls}">${cat.cat}</div></div><div class="card-desc">${item.e}</div><div class="recipe"><div class="recipe-label"><svg width="12" height="12" viewBox="0 0 16 16" fill="#8b949e"><path d="M5.5 3.5v2.268a1 1 0 0 1-.293.707L2.5 9.182V12.5h11V9.182l-2.707-2.707a1 1 0 0 1-.293-.707V3.5h-5ZM4 2h8a1 1 0 0 1 1 1v2.768l2.354 2.354A1.5 1.5 0 0 1 15.793 9H16v5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14V9h.207a1.5 1.5 0 0 1 .44-.878L3 5.768V3a1 1 0 0 1 1-1Z"/></svg>Рецепт</div><div class="recipe-content">${item.r}</div></div>${item.note?`<div class="card-desc" style="margin-top:8px;font-style:italic;font-size:.75rem">💡 ${item.note}</div>`:""}<div class="card-meta">${meta}</div></div>`
+})
 });
-
-// Копировать код
-$('roomCodeDisplay').addEventListener('click', () => {
-  navigator.clipboard.writeText(roomCode).then(()=>toast('Код скопирован!')).catch(()=>{});
-});
-
-// Отмена ожидания
-$('btnCancelWait').addEventListener('click', () => {
-  sndClick();
-  if (peer) peer.destroy();
-  initPeer();
-  showScreen('Lobby');
-});
-
-// ─────────────────────────────────────
-// ПОДКЛЮЧИТЬСЯ К КОМНАТЕ
-// ─────────────────────────────────────
-$('btnJoin').addEventListener('click', () => {
-  sndClick();
-  const code = $('inputCode').value.trim().toUpperCase();
-  if (!code || code.length < 3) { toast('Введите код комнаты'); return; }
-
-  const targetId = 'CHKRS-' + code;
-  isHost = false;
-  console.log('[JOIN] Подключаюсь к:', targetId);
-
-  // Переинициализируем пир
-  if (peer) peer.destroy();
-  const cfg = getPeerConfig();
-  peer = new Peer(undefined, cfg);
-
-  peer.on('open', () => {
-    console.log('[JOIN] Мой ID:', peer.id);
-    conn = peer.connect(targetId, { reliable: true, serialization: 'json' });
-    setupConnection();
-  });
-
-  peer.on('error', (err) => {
-    console.error('[JOIN] Ошибка:', err);
-    toast('Не удалось подключиться: ' + err.type);
-    initPeer();
-    showScreen('Lobby');
-  });
-});
-
-// Enter в поле кода
-$('inputCode').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') $('btnJoin').click();
-});
-
-// ─────────────────────────────────────
-// ЛОКАЛЬНАЯ ИГРА
-// ─────────────────────────────────────
-$('btnLocal').addEventListener('click', () => {
-  sndClick();
-  gameState.isLocal = true;
-  gameState.myColor = 1;
-  gameState.board = initBoard();
-  gameState.turn = 1;
-  gameState.captured1 = 0;
-  gameState.captured2 = 0;
-  gameState.moveNum = 0;
-  gameState.gameOver = false;
-  gameState.selected = null;
-  gameState.validMoves = [];
-  gameState.chainPiece = null;
-  $('moveLog').innerHTML = '';
-  $('btnResign').style.display = 'none';
-  $('btnDraw').style.display = 'none';
-  resetTimer();
-  startTimer();
-  showScreen('Game');
-  renderBoard();
-});
-
-// ─────────────────────────────────────
-// НАЧАЛО ОНЛАЙН ИГРЫ
-// ─────────────────────────────────────
-function startGame() {
-  gameState.isLocal = false;
-  gameState.myColor = isHost ? 1 : 2; // хост = красные, гость = белые
-  gameState.board = initBoard();
-  gameState.turn = 1; // красные ходят первыми
-  gameState.captured1 = 0;
-  gameState.captured2 = 0;
-  gameState.moveNum = 0;
-  gameState.gameOver = false;
-  gameState.selected = null;
-  gameState.validMoves = [];
-  gameState.chainPiece = null;
-  $('moveLog').innerHTML = '';
-  $('btnResign').style.display = '';
-  $('btnDraw').style.display = '';
-  resetTimer();
-  startTimer();
-  showScreen('Game');
-  renderBoard();
+g.innerHTML=html;
+if(count===0){nr.classList.remove("hidden")}else{nr.classList.add("hidden")}
 }
-
-// ─────────────────────────────────────
-// РЕВАНШ
-// ─────────────────────────────────────
-$('btnRematch').addEventListener('click', () => {
-  sndClick();
-  if (gameState.isLocal) {
-    startRematch();
-    return;
-  }
-  sendData({type:'rematch_offer'});
-  toast('Предложение реванша отправлено');
-});
-
-function startRematch() {
-  hide('screenResult');
-  // Меняем цвета
-  if (!gameState.isLocal) {
-    isHost = !isHost;
-    gameState.myColor = gameState.myColor === 1 ? 2 : 1;
-  }
-  gameState.board = initBoard();
-  gameState.turn = 1;
-  gameState.captured1 = 0;
-  gameState.captured2 = 0;
-  gameState.moveNum = 0;
-  gameState.gameOver = false;
-  gameState.selected = null;
-  gameState.validMoves = [];
-  gameState.chainPiece = null;
-  $('moveLog').innerHTML = '';
-  resetTimer();
-  startTimer();
-  showScreen('Game');
-  renderBoard();
-}
-
-// В лобби
-$('btnToLobby').addEventListener('click', () => {
-  sndClick();
-  hide('screenResult');
-  stopTimer();
-  stopPing();
-  if (conn) { conn.close(); conn = null; }
-  if (peer) peer.destroy();
-  initPeer();
-  showScreen('Lobby');
-  displayStats();
-});
-
-// ─────────────────────────────────────
-// СДАТЬСЯ
-// ─────────────────────────────────────
-$('btnResign').addEventListener('click', () => {
-  sndClick();
-  showModal('Вы уверены, что хотите сдаться?', [
-    {text:'Да, сдаюсь', action:()=>{
-      sendData({type:'resign'});
-      endGame('lose');
-      hideModal();
-    }},
-    {text:'Нет', action:hideModal}
-  ]);
-});
-
-// ─────────────────────────────────────
-// НИЧЬЯ
-// ─────────────────────────────────────
-$('btnDraw').addEventListener('click', () => {
-  sndClick();
-  sendData({type:'draw_offer'});
-  toast('Предложение ничьей отправлено');
-});
-
-// ─────────────────────────────────────
-// ПЕРЕПОДКЛЮЧЕНИЕ К СЕРВЕРУ
-// ─────────────────────────────────────
-$('btnReconnect').addEventListener('click', () => {
-  sndClick();
-  if (peer) peer.destroy();
-  initPeer();
-  toast('Переподключение...');
-});
-
-// ─────────────────────────────────────
-// ИНИЦИАЛИЗАЦИЯ
-// ─────────────────────────────────────
-$('btnCreate').disabled = true;
-$('btnJoin').disabled = true;
-initPeer();
-showScreen('Lobby');
-
-console.log('═══════════════════════════════════════════');
-console.log('  СТАРИКАМ ТУТ НЕ МЕСТО!');
-console.log('  Русские шашки — P2P Online');
-console.log('  PeerJS WebRTC');
-console.log('═══════════════════════════════════════════');
+document.getElementById("searchInput").addEventListener("input",renderCards);
+renderTabs();
+renderCards();
 </script>
 </body>
 </html>
