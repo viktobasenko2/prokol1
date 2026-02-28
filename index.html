@@ -1,1339 +1,1525 @@
+<!-- index.html — "СТАРИКАМ ТУТ НЕ МЕСТО!" — Русские шашки онлайн (PeerJS WebRTC) -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Шашки — Старикам тут не место!</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>СТАРИКАМ ТУТ НЕ МЕСТО!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Russo+One&family=Press+Start+2P&display=swap');
+/* ═══════════════════════════════════════════════════════
+   ГЛОБАЛЬНЫЕ СТИЛИ — ТЁМНАЯ ТЕМА МИНИМАЛИЗМ
+   ═══════════════════════════════════════════════════════ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-  background: #0a0a0a;
-  color: #e0e0e0;
-  font-family: 'Russo One', sans-serif;
-  min-height: 100vh;
-  overflow-x: hidden;
+:root {
+  --bg: #0a0a0a;
+  --panel: #111111;
+  --border: #222;
+  --accent: #e63946;
+  --text: #f1faee;
+  --text2: #a8a8a8;
+  --cell-dark: #1a1a2e;
+  --cell-light: #16213e;
+  --p1: #e63946;
+  --p2: #f1faee;
+  --hl-move: rgba(230,57,70,0.3);
+  --hl-sel: rgba(230,57,70,0.6);
+  --font: 'JetBrains Mono', monospace;
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background:
-    radial-gradient(ellipse at 20% 50%, rgba(255,0,0,0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 50%, rgba(255,60,0,0.06) 0%, transparent 50%);
-  z-index: -1;
-  animation: bgPulse 8s ease-in-out infinite alternate;
+html, body {
+  width:100%; min-height:100vh;
+  background: var(--bg); color: var(--text);
+  font-family: var(--font); font-size:14px;
+  overflow-x:hidden;
 }
 
-@keyframes bgPulse {
-  0% { opacity: 0.5; }
-  100% { opacity: 1; }
+/* Скроллбар */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--accent); }
+
+/* ═══════════════════════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════════════════════ */
+#app {
+  display:flex; flex-direction:column; align-items:center;
+  min-height:100vh; padding:16px;
 }
 
-.header {
-  text-align: center;
-  padding: 25px 20px 10px;
+h1.title {
+  font-size: clamp(18px, 5vw, 36px);
+  font-weight:900; text-transform:uppercase;
+  letter-spacing:6px; color:var(--accent);
+  text-align:center; margin:16px 0 8px;
+  text-shadow: 0 0 30px rgba(230,57,70,0.3);
+  user-select:none;
 }
 
-.header h1 {
-  font-family: 'Press Start 2P', monospace;
-  font-size: clamp(14px, 3.5vw, 32px);
-  color: #ff2200;
-  text-shadow: 0 0 10px rgba(255,34,0,0.8), 0 0 40px rgba(255,34,0,0.4);
-  animation: titleGlow 3s ease-in-out infinite alternate;
+.subtitle {
+  color:var(--text2); font-size:12px; margin-bottom:20px;
+  letter-spacing:2px; text-transform:uppercase;
 }
 
-@keyframes titleGlow {
-  0% { text-shadow: 0 0 10px rgba(255,34,0,0.8), 0 0 40px rgba(255,34,0,0.4); }
-  100% { text-shadow: 0 0 20px rgba(255,34,0,1), 0 0 60px rgba(255,34,0,0.6); }
+/* ═══════════════════════════════════════════════════════
+   ПАНЕЛИ / КАРТОЧКИ
+   ═══════════════════════════════════════════════════════ */
+.panel {
+  background:var(--panel); border:1px solid var(--border);
+  padding:24px; width:100%; max-width:500px; margin-bottom:16px;
 }
 
-.header .subtitle { font-size: 13px; color: #666; margin-top: 6px; }
-
-/* LOBBY */
-.lobby { max-width: 500px; margin: 20px auto; padding: 0 20px; }
-
-.lobby-box {
-  background: linear-gradient(145deg, #1a1a1a, #111);
-  border: 1px solid #333;
-  border-radius: 16px;
-  padding: 25px;
-  margin-bottom: 20px;
-  position: relative;
-  overflow: hidden;
+.panel-title {
+  font-size:13px; font-weight:700; color:var(--accent);
+  letter-spacing:3px; text-transform:uppercase; margin-bottom:16px;
 }
 
-.lobby-box::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #ff2200, transparent);
-}
-
-.lobby-box h2 {
-  font-size: 18px;
-  color: #ff4444;
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
+/* ═══════════════════════════════════════════════════════
+   КНОПКИ
+   ═══════════════════════════════════════════════════════ */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 14px 28px;
-  font-family: 'Russo One', sans-serif;
-  font-size: 15px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 100%;
+  display:inline-block; padding:12px 24px;
+  background:transparent; color:var(--accent);
+  border:1px solid var(--accent); border-radius:0;
+  font-family:var(--font); font-size:13px; font-weight:700;
+  letter-spacing:2px; text-transform:uppercase;
+  cursor:pointer; transition:all 0.2s; user-select:none;
+}
+.btn:hover, .btn.active { background:var(--accent); color:var(--bg); }
+.btn:disabled { opacity:0.3; cursor:default; }
+.btn:disabled:hover { background:transparent; color:var(--accent); }
+.btn-sm { padding:8px 16px; font-size:11px; }
+.btn-block { display:block; width:100%; text-align:center; }
+.btn + .btn { margin-left:8px; }
+
+/* ═══════════════════════════════════════════════════════
+   ИНПУТЫ
+   ═══════════════════════════════════════════════════════ */
+.input {
+  background:var(--bg); border:1px solid var(--border); color:var(--text);
+  font-family:var(--font); font-size:14px; padding:12px 16px;
+  border-radius:0; outline:none; width:100%; transition:border-color 0.2s;
+}
+.input:focus { border-color:var(--accent); }
+.input::placeholder { color:var(--text2); }
+.input-group { display:flex; gap:8px; margin-bottom:12px; }
+.input-group .input { flex:1; }
+
+/* ═══════════════════════════════════════════════════════
+   СТАТУС ИНДИКАТОР
+   ═══════════════════════════════════════════════════════ */
+.status-dot {
+  display:inline-block; width:8px; height:8px; border-radius:50%;
+  background:#e63946; margin-right:8px; vertical-align:middle;
+  transition:background 0.3s;
+}
+.status-dot.online { background:#2ecc71; }
+.status-line {
+  font-size:11px; color:var(--text2); margin-top:12px;
+  display:flex; align-items:center;
 }
 
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #ff2200, #cc1100);
-  color: white;
-  box-shadow: 0 4px 20px rgba(255,34,0,0.3);
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 30px rgba(255,34,0,0.5);
-}
-
-.btn-secondary {
-  background: linear-gradient(135deg, #333, #222);
-  color: #ccc;
-  border: 1px solid #444;
-}
-
-.btn-secondary:hover { border-color: #ff4444; color: white; }
-
-.input-group { margin-bottom: 15px; }
-
-.input-group label {
-  display: block;
-  font-size: 12px;
-  color: #888;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.input-group input {
-  width: 100%;
-  padding: 12px 16px;
-  background: #0d0d0d;
-  border: 1px solid #333;
-  border-radius: 8px;
-  color: #fff;
-  font-family: 'Russo One', sans-serif;
-  font-size: 18px;
-  text-align: center;
-  letter-spacing: 4px;
-  transition: border-color 0.3s;
-}
-
-.input-group input:focus {
-  outline: none;
-  border-color: #ff4444;
-  box-shadow: 0 0 15px rgba(255,68,68,0.2);
-}
-
+/* ═══════════════════════════════════════════════════════
+   ЭКРАН ОЖИДАНИЯ
+   ═══════════════════════════════════════════════════════ */
 .room-code {
-  background: #0d0d0d;
-  border: 2px dashed #ff4444;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  margin: 15px 0;
-  cursor: pointer;
-  transition: all 0.3s;
+  font-size: clamp(32px,10vw,56px); font-weight:900;
+  letter-spacing:12px; color:var(--accent); text-align:center;
+  padding:24px 0; cursor:pointer; user-select:all;
+  transition:text-shadow 0.3s;
+}
+.room-code:hover { text-shadow:0 0 20px rgba(230,57,70,0.6); }
+
+.waiting-dots::after {
+  content:''; animation: dots 1.5s steps(4,end) infinite;
+}
+@keyframes dots {
+  0%   { content:''; }
+  25%  { content:'.'; }
+  50%  { content:'..'; }
+  75%  { content:'...'; }
+  100% { content:''; }
 }
 
-.room-code:hover { background: #1a0a0a; border-style: solid; }
-
-.room-code .code {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 22px;
-  color: #ff4444;
-  letter-spacing: 4px;
-  word-break: break-all;
+/* ═══════════════════════════════════════════════════════
+   ДОСКА
+   ═══════════════════════════════════════════════════════ */
+.game-container {
+  display:flex; flex-direction:column; align-items:center;
+  width:100%; max-width:540px;
 }
 
-.room-code .hint { font-size: 11px; color: #666; margin-top: 8px; }
-
-.divider {
-  text-align: center;
-  margin: 20px 0;
-  position: relative;
+.player-bar {
+  display:flex; align-items:center; justify-content:space-between;
+  width:100%; max-width:500px; padding:8px 4px;
+  font-size:12px; letter-spacing:1px; text-transform:uppercase;
 }
-
-.divider::before, .divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 40%;
-  height: 1px;
-  background: #333;
+.player-bar .name {
+  display:flex; align-items:center; gap:8px;
 }
-
-.divider::before { left: 0; }
-.divider::after { right: 0; }
-.divider span { background: #0a0a0a; padding: 0 15px; color: #555; font-size: 13px; }
-
-.status-bar {
-  text-align: center;
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 15px;
-  font-size: 13px;
+.player-bar .color-dot {
+  width:14px; height:14px; border-radius:50%;
+  border:2px solid var(--border);
 }
+.player-bar.active-turn { color:var(--accent); }
+.player-bar.active-turn .color-dot { border-color:var(--accent); box-shadow:0 0 8px var(--accent); }
+.player-bar .captured { color:var(--text2); font-size:11px; }
 
-.status-bar.waiting {
-  background: rgba(255,165,0,0.1);
-  border: 1px solid rgba(255,165,0,0.3);
-  color: #ffaa44;
-  animation: statusPulse 2s ease-in-out infinite;
-}
-
-.status-bar.connecting {
-  background: rgba(0,150,255,0.1);
-  border: 1px solid rgba(0,150,255,0.3);
-  color: #44aaff;
-  animation: statusPulse 1s ease-in-out infinite;
-}
-
-.status-bar.connected {
-  background: rgba(0,255,100,0.1);
-  border: 1px solid rgba(0,255,100,0.3);
-  color: #44ff88;
-}
-
-.status-bar.error {
-  background: rgba(255,0,0,0.1);
-  border: 1px solid rgba(255,0,0,0.3);
-  color: #ff4444;
-}
-
-@keyframes statusPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-/* SERVER SELECTOR */
-.server-info {
-  font-size: 11px;
-  color: #555;
-  text-align: center;
-  margin-top: 10px;
-}
-
-.server-info select {
-  background: #111;
-  color: #888;
-  border: 1px solid #333;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-family: 'Russo One', sans-serif;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-/* GAME */
-.game-screen {
-  display: none;
-  max-width: 700px;
-  margin: 15px auto;
-  padding: 0 15px;
-}
-
-.game-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  padding: 12px 16px;
-  background: linear-gradient(145deg, #1a1a1a, #111);
-  border: 1px solid #333;
-  border-radius: 12px;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.player-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.player-info .piece-preview {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid #555;
-  flex-shrink: 0;
-}
-
-.player-info .piece-preview.red {
-  background: radial-gradient(circle at 35% 35%, #ff6644, #cc2200);
-  border-color: #ff4444;
-}
-
-.player-info .piece-preview.black {
-  background: radial-gradient(circle at 35% 35%, #555, #111);
-  border-color: #777;
-}
-
-.player-info .name { font-size: 13px; }
-.player-info .score { font-size: 11px; color: #888; }
-
-.turn-indicator {
-  text-align: center;
-  font-size: 12px;
-  padding: 5px 14px;
-  border-radius: 20px;
-  font-weight: bold;
-  white-space: nowrap;
-}
-
-.turn-indicator.your-turn {
-  background: rgba(255,34,0,0.2);
-  color: #ff4444;
-  border: 1px solid rgba(255,34,0,0.3);
-  animation: turnPulse 1.5s ease-in-out infinite;
-}
-
-.turn-indicator.opponent-turn {
-  background: rgba(255,255,255,0.05);
-  color: #666;
-  border: 1px solid #333;
-}
-
-@keyframes turnPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255,34,0,0.3); }
-  50% { box-shadow: 0 0 0 8px rgba(255,34,0,0); }
-}
-
-/* BOARD */
-.board-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 12px;
+.board-wrapper {
+  position:relative; width:100%; max-width:500px;
+  aspect-ratio:1/1;
+  box-shadow: 0 0 40px rgba(230,57,70,0.1), 0 0 80px rgba(230,57,70,0.05);
+  border:2px solid var(--border);
 }
 
 .board {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  border: 3px solid #444;
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: 0 0 30px rgba(0,0,0,0.8), 0 0 60px rgba(255,34,0,0.08);
-  width: min(88vw, 560px);
-  height: min(88vw, 560px);
+  display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr);
+  width:100%; height:100%;
 }
 
 .cell {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  cursor: default;
+  position:relative; display:flex; align-items:center; justify-content:center;
+  cursor:default; transition:background 0.2s;
 }
-
-.cell.light { background: #d4a574; }
-.cell.dark { background: #8b5e3c; }
-
-.cell.dark.highlight {
-  background: rgba(255,200,0,0.45);
-  cursor: pointer;
+.cell.light { background:var(--cell-light); }
+.cell.dark { background:var(--cell-dark); }
+.cell.highlight { background:var(--hl-move); cursor:pointer; }
+.cell.highlight::after {
+  content:''; position:absolute; width:30%; height:30%; border-radius:50%;
+  background:var(--accent); opacity:0.5;
 }
+.cell.selected { background:var(--hl-sel); }
 
-.cell.dark.highlight::after {
-  content: '';
-  position: absolute;
-  width: 28%;
-  height: 28%;
-  border-radius: 50%;
-  background: rgba(255,200,0,0.7);
-  animation: dotP 1s ease-in-out infinite;
-}
-
-.cell.dark.capture-highlight {
-  background: rgba(255,0,0,0.4);
-  cursor: pointer;
-}
-
-.cell.dark.capture-highlight::after {
-  content: '';
-  position: absolute;
-  width: 34%;
-  height: 34%;
-  border-radius: 50%;
-  background: rgba(255,0,0,0.7);
-  animation: dotP 0.8s ease-in-out infinite;
-}
-
-@keyframes dotP {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.5; }
-}
-
-/* PIECES */
+/* ═══════════════════════════════════════════════════════
+   ШАШКИ
+   ═══════════════════════════════════════════════════════ */
 .piece {
-  width: 78%;
-  height: 78%;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.15s;
-  position: relative;
-  z-index: 2;
+  width:75%; height:75%; border-radius:50%;
+  position:absolute; z-index:2;
+  transition: all 0.3s ease;
+  cursor:pointer; user-select:none;
+  display:flex; align-items:center; justify-content:center;
 }
-
-.piece.red {
-  background: radial-gradient(circle at 35% 35%, #ff8866, #dd3311, #991100);
-  border: 2px solid #ff6644;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
+.piece.p1 {
+  background: radial-gradient(circle at 35% 35%, #ff5c6a, #e63946 60%, #b02a33);
+  border:2px solid #ff8a94;
+  box-shadow: 0 3px 10px rgba(230,57,70,0.5), inset 0 -2px 4px rgba(0,0,0,0.3);
 }
-
-.piece.black-piece {
-  background: radial-gradient(circle at 35% 35%, #666, #333, #111);
-  border: 2px solid #888;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.1);
+.piece.p2 {
+  background: radial-gradient(circle at 35% 35%, #ffffff, #f1faee 60%, #c8d6c5);
+  border:2px solid #ffffff;
+  box-shadow: 0 3px 10px rgba(241,250,238,0.3), inset 0 -2px 4px rgba(0,0,0,0.15);
 }
-
-.piece:hover { transform: scale(1.08); filter: brightness(1.15); }
-
-.piece.selected { transform: scale(1.12); animation: selP 1s ease-in-out infinite; }
-
-.piece.selected.red {
-  box-shadow: 0 0 0 3px rgba(255,68,68,0.5), 0 0 20px rgba(255,34,0,0.5);
-}
-
-.piece.selected.black-piece {
-  box-shadow: 0 0 0 3px rgba(150,150,150,0.5), 0 0 20px rgba(150,150,150,0.3);
-}
-
-@keyframes selP {
-  0%, 100% { filter: brightness(1.2); }
-  50% { filter: brightness(1.4); }
-}
-
 .piece.king::after {
-  content: '♛';
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: clamp(14px, 3.5vw, 26px);
-  color: gold;
-  text-shadow: 0 0 8px rgba(255,215,0,0.8);
+  content:''; width:50%; height:50%; border-radius:50%;
+  border:2px solid rgba(0,0,0,0.3);
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.2);
+}
+.piece.p1.king::after { border-color:rgba(255,255,255,0.4); box-shadow:inset 0 0 6px rgba(255,255,255,0.2); }
+.piece.p2.king::after { border-color:rgba(0,0,0,0.25); }
+
+.piece.selected {
+  animation: pulse 0.8s ease-in-out infinite alternate;
+  z-index:10;
+}
+@keyframes pulse {
+  from { transform:scale(1); box-shadow: 0 3px 10px rgba(230,57,70,0.5); }
+  to   { transform:scale(1.1); box-shadow: 0 0 20px rgba(230,57,70,0.8); }
 }
 
-.piece.no-click { cursor: default; pointer-events: none; }
-
-/* LOG */
-.game-log {
-  background: linear-gradient(145deg, #1a1a1a, #111);
-  border: 1px solid #333;
-  border-radius: 10px;
-  padding: 12px;
-  max-height: 120px;
-  overflow-y: auto;
-  margin-bottom: 12px;
+/* ═══════════════════════════════════════════════════════
+   ИГРОВЫЕ КНОПКИ ПОД ДОСКОЙ
+   ═══════════════════════════════════════════════════════ */
+.game-controls {
+  display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;
+  justify-content:center;
 }
 
-.game-log h3 { font-size: 12px; color: #555; margin-bottom: 6px; text-transform: uppercase; }
-
-.game-log .log-entry {
-  font-size: 11px;
-  color: #777;
-  padding: 2px 0;
-  border-bottom: 1px solid #1a1a1a;
+/* ═══════════════════════════════════════════════════════
+   ЛОГ ХОДОВ
+   ═══════════════════════════════════════════════════════ */
+.move-log {
+  width:100%; max-width:500px; margin-top:12px;
+  max-height:120px; overflow-y:auto;
+  background:var(--panel); border:1px solid var(--border);
+  padding:8px 12px; font-size:11px; color:var(--text2);
 }
+.move-log div { padding:2px 0; border-bottom:1px solid #1a1a1a; }
+.move-log div:last-child { border-bottom:none; }
 
-.game-log .log-entry.important { color: #ff4444; }
-
-.game-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 10px;
+/* ═══════════════════════════════════════════════════════
+   РЕЗУЛЬТАТ
+   ═══════════════════════════════════════════════════════ */
+.result-overlay {
+  position:fixed; top:0; left:0; right:0; bottom:0; z-index:100;
+  background:rgba(10,10,10,0.92); display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  animation: fadeIn 0.3s ease;
 }
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
 
-.game-actions .btn { width: auto; padding: 10px 20px; font-size: 12px; }
+.result-text {
+  font-size:clamp(28px,8vw,56px); font-weight:900;
+  letter-spacing:8px; text-transform:uppercase;
+  animation: blink 1s ease-in-out 3;
+}
+@keyframes blink {
+  0%,100% { opacity:1; }
+  50% { opacity:0.3; }
+}
+.result-text.win { color:var(--accent); }
+.result-text.lose { color:var(--text2); }
+.result-text.draw { color:#f4a261; }
+.result-buttons { margin-top:32px; display:flex; gap:12px; }
 
-/* MODAL */
+/* ═══════════════════════════════════════════════════════
+   МОДАЛЬНЫЕ ОКНА
+   ═══════════════════════════════════════════════════════ */
 .modal-overlay {
-  display: none;
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.85);
-  z-index: 100;
-  align-items: center;
-  justify-content: center;
+  position:fixed; top:0; left:0; right:0; bottom:0; z-index:90;
+  background:rgba(10,10,10,0.8); display:flex;
+  align-items:center; justify-content:center;
 }
-
-.modal-overlay.active { display: flex; }
-
 .modal {
-  background: linear-gradient(145deg, #1a1a1a, #111);
-  border: 2px solid #ff4444;
-  border-radius: 20px;
-  padding: 35px;
-  text-align: center;
-  max-width: 380px;
-  width: 90%;
-  animation: modalIn 0.4s ease;
+  background:var(--panel); border:1px solid var(--accent);
+  padding:32px; max-width:400px; width:90%; text-align:center;
+}
+.modal p { margin-bottom:20px; font-size:14px; line-height:1.6; }
+.modal .btn + .btn { margin-left:8px; }
+
+/* ═══════════════════════════════════════════════════════
+   ЗВУК-КНОПКА
+   ═══════════════════════════════════════════════════════ */
+.sound-toggle {
+  position:fixed; top:12px; right:12px; z-index:50;
+  background:transparent; border:1px solid var(--border);
+  color:var(--text2); font-size:20px; width:40px; height:40px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s; border-radius:0; font-family:var(--font);
+}
+.sound-toggle:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ═══════════════════════════════════════════════════════
+   СТАТИСТИКА
+   ═══════════════════════════════════════════════════════ */
+.stats {
+  font-size:11px; color:var(--text2); letter-spacing:1px;
+  text-align:center; margin-top:8px;
+}
+.stats span { color:var(--accent); font-weight:700; }
+
+/* ═══════════════════════════════════════════════════════
+   ПИНГ
+   ═══════════════════════════════════════════════════════ */
+.ping-display {
+  font-size:10px; color:var(--text2); position:fixed; bottom:8px; right:12px;
 }
 
-@keyframes modalIn {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+/* ═══════════════════════════════════════════════════════
+   ТАЙМЕР
+   ═══════════════════════════════════════════════════════ */
+.timer {
+  font-size:18px; font-weight:700; color:var(--text);
+  min-width:60px; text-align:center;
 }
+.timer.urgent { color:var(--accent); animation: blink 0.5s ease-in-out infinite; }
 
-.modal .result-icon { font-size: 56px; margin-bottom: 12px; }
-.modal h2 { font-family: 'Press Start 2P', monospace; font-size: 20px; color: #ff4444; margin-bottom: 8px; }
-.modal p { color: #999; margin-bottom: 20px; font-size: 14px; }
-
-/* TOAST */
+/* ═══════════════════════════════════════════════════════
+   TOAST УВЕДОМЛЕНИЯ
+   ═══════════════════════════════════════════════════════ */
 .toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: #222;
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 8px;
-  border: 1px solid #ff4444;
-  font-family: 'Russo One', sans-serif;
-  font-size: 13px;
-  z-index: 200;
-  transition: transform 0.3s ease;
-  pointer-events: none;
-  max-width: 90%;
-  text-align: center;
+  position:fixed; top:16px; left:50%; transform:translateX(-50%);
+  background:var(--accent); color:var(--bg); padding:10px 24px;
+  font-size:12px; font-weight:700; letter-spacing:1px; z-index:200;
+  animation: slideDown 0.3s ease, fadeOut 0.3s ease 2.7s;
+  opacity:1;
 }
+@keyframes slideDown { from{top:-40px;opacity:0;} to{top:16px;opacity:1;} }
+@keyframes fadeOut { from{opacity:1;} to{opacity:0;} }
 
-.toast.show { transform: translateX(-50%) translateY(0); }
-
-.particle {
-  position: fixed;
-  pointer-events: none;
-  z-index: 300;
-  border-radius: 50%;
-  animation: particleFly 1s ease-out forwards;
+/* Адаптивность */
+@media(max-width:520px){
+  .board-wrapper { max-width:95vw; }
+  .player-bar { max-width:95vw; }
+  .panel { max-width:95vw; }
+  h1.title { letter-spacing:3px; }
+  .room-code { letter-spacing:8px; }
 }
-
-@keyframes particleFly {
-  0% { opacity: 1; transform: translate(0,0) scale(1); }
-  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
-}
-
-.hidden { display: none !important; }
-
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: #111; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-
-.retry-btn {
-  margin-top: 10px;
-  padding: 8px 16px;
-  background: #222;
-  color: #ff6644;
-  border: 1px solid #ff4444;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: 'Russo One', sans-serif;
-  font-size: 12px;
-}
-
-.retry-btn:hover { background: #331111; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>🎯 СТАРИКАМ ТУТ НЕ МЕСТО</h1>
-  <p class="subtitle">Онлайн шашки — P2P мультиплеер</p>
-</div>
+<button class="sound-toggle" id="soundBtn" title="Звук">🔊</button>
+<div id="pingDisplay" class="ping-display"></div>
 
-<!-- LOBBY -->
-<div class="lobby" id="lobby">
+<div id="app">
+  <h1 class="title">СТАРИКАМ ТУТ НЕ МЕСТО!</h1>
+  <div class="subtitle">Русские шашки • Онлайн</div>
 
-  <div class="lobby-box">
-    <h2><span>🔥</span> Создать игру</h2>
-    <p style="color:#888; font-size:12px; margin-bottom:15px;">
-      Создай комнату и отправь код другу
-    </p>
-    <button class="btn btn-primary" id="btnCreate" onclick="createRoom()">
-      ⚡ Создать комнату
-    </button>
-    <div id="roomCodeBox" class="hidden">
-      <div class="room-code" onclick="copyCode()">
-        <div class="code" id="myRoomCode">---</div>
-        <div class="hint">📋 Нажми чтобы скопировать</div>
+  <!-- ═══════ ЭКРАН: ЛОББИ ═══════ -->
+  <div id="screenLobby">
+    <div class="panel">
+      <div class="panel-title">Онлайн игра</div>
+      <button class="btn btn-block" id="btnCreate" style="margin-bottom:16px;">Создать комнату</button>
+      <div class="input-group">
+        <input class="input" id="inputCode" placeholder="Код комнаты" maxlength="6" style="text-transform:uppercase;">
+        <button class="btn" id="btnJoin">Войти</button>
       </div>
-      <div class="status-bar waiting" id="waitStatus">⏳ Ожидание соперника...</div>
-    </div>
-    <div id="createError" class="hidden">
-      <div class="status-bar error" id="createErrorMsg">Ошибка</div>
-      <button class="retry-btn" onclick="retryCreate()">🔄 Попробовать другой сервер</button>
-    </div>
-  </div>
-
-  <div class="divider"><span>ИЛИ</span></div>
-
-  <div class="lobby-box">
-    <h2><span>🎮</span> Присоединиться</h2>
-    <div class="input-group">
-      <label>Код комнаты</label>
-      <input type="text" id="joinCode" placeholder="ВВЕДИ КОД" maxlength="30"
-             oninput="this.value=this.value.toUpperCase()">
-    </div>
-    <button class="btn btn-primary" id="btnJoin" onclick="joinRoom()">
-      🚀 Подключиться
-    </button>
-    <div id="joinStatus" class="hidden">
-      <div class="status-bar connecting" id="joinStatusMsg">🔗 Подключение...</div>
-    </div>
-  </div>
-
-  <div class="server-info">
-    Сервер: <select id="serverSelect" onchange="onServerChange()">
-      <option value="0">PeerJS Cloud (по умолчанию)</option>
-      <option value="1">Scaledrone Fallback</option>
-      <option value="2">Metered TURN</option>
-    </select>
-  </div>
-</div>
-
-<!-- GAME -->
-<div class="game-screen" id="gameScreen">
-  <div class="game-info">
-    <div class="player-info">
-      <div class="piece-preview" id="myColorPreview"></div>
-      <div>
-        <div class="name" id="myLabel">Вы</div>
-        <div class="score" id="myScore">12</div>
+      <div class="status-line">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Подключение к серверу...</span>
       </div>
     </div>
-    <div class="turn-indicator" id="turnIndicator">Ваш ход</div>
-    <div class="player-info">
-      <div>
-        <div class="name" id="oppLabel">Соперник</div>
-        <div class="score" id="oppScore">12</div>
-      </div>
-      <div class="piece-preview" id="oppColorPreview"></div>
+
+    <div class="panel">
+      <div class="panel-title">Локальная игра</div>
+      <button class="btn btn-block" id="btnLocal">2 игрока за одним устройством</button>
+    </div>
+
+    <!-- Настройки PeerJS сервера (fallback) -->
+    <div class="panel" style="border-color:#1a1a1a;">
+      <details>
+        <summary style="cursor:pointer; font-size:11px; color:var(--text2); letter-spacing:1px; text-transform:uppercase;">
+          ⚙ Настройки сервера
+        </summary>
+        <div style="margin-top:12px;">
+          <div class="input-group">
+            <input class="input" id="inputHost" placeholder="Хост (0.peerjs.com)" style="font-size:12px;">
+          </div>
+          <div class="input-group">
+            <input class="input" id="inputPort" placeholder="Порт (443)" type="number" style="font-size:12px;">
+          </div>
+          <div class="input-group">
+            <input class="input" id="inputPath" placeholder="Путь (/)" style="font-size:12px;">
+          </div>
+          <button class="btn btn-sm btn-block" id="btnReconnect">Переподключиться</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="stats" id="statsDisplay"></div>
+  </div>
+
+  <!-- ═══════ ЭКРАН: ОЖИДАНИЕ ═══════ -->
+  <div id="screenWaiting" style="display:none;">
+    <div class="panel" style="text-align:center;">
+      <div class="panel-title">Комната создана</div>
+      <div class="room-code" id="roomCodeDisplay" title="Нажми, чтобы скопировать">----</div>
+      <p style="color:var(--text2); font-size:12px; margin-bottom:8px;">
+        Передай этот код сопернику
+      </p>
+      <p style="color:var(--text2); font-size:12px;">
+        Ожидание противника<span class="waiting-dots"></span>
+      </p>
+      <button class="btn btn-sm" id="btnCancelWait" style="margin-top:20px;">Отмена</button>
     </div>
   </div>
 
-  <div class="board-container">
-    <div class="board" id="board"></div>
-  </div>
+  <!-- ═══════ ЭКРАН: ИГРА ═══════ -->
+  <div id="screenGame" style="display:none;">
+    <div class="game-container">
+      <!-- Противник (сверху) -->
+      <div class="player-bar" id="barOpponent">
+        <div class="name">
+          <div class="color-dot" id="dotOpponent"></div>
+          <span id="nameOpponent">Противник</span>
+        </div>
+        <div class="timer" id="timerOpponent">60</div>
+        <div class="captured" id="capturedOpponent">×0</div>
+      </div>
 
-  <div class="game-log" id="gameLog">
-    <h3>📜 Журнал</h3>
-  </div>
+      <!-- Доска -->
+      <div class="board-wrapper">
+        <div class="board" id="board"></div>
+      </div>
 
-  <div class="game-actions">
-    <button class="btn btn-secondary" onclick="surrender()">🏳️ Сдаться</button>
-    <button class="btn btn-secondary" onclick="offerDraw()">🤝 Ничья</button>
+      <!-- Игрок (снизу) -->
+      <div class="player-bar" id="barPlayer">
+        <div class="name">
+          <div class="color-dot" id="dotPlayer"></div>
+          <span id="namePlayer">Вы</span>
+        </div>
+        <div class="timer" id="timerPlayer">60</div>
+        <div class="captured" id="capturedPlayer">×0</div>
+      </div>
+
+      <!-- Кнопки -->
+      <div class="game-controls">
+        <button class="btn btn-sm" id="btnResign">Сдаться</button>
+        <button class="btn btn-sm" id="btnDraw">Предложить ничью</button>
+      </div>
+
+      <!-- Лог ходов -->
+      <div class="move-log" id="moveLog"></div>
+    </div>
   </div>
 </div>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="modalOverlay">
+<!-- ═══════ МОДАЛЬНОЕ ОКНО (общее) ═══════ -->
+<div class="modal-overlay" id="modal" style="display:none;">
   <div class="modal">
-    <div class="result-icon" id="resultIcon">🏆</div>
-    <h2 id="resultTitle">Победа!</h2>
-    <p id="resultText">Вы выиграли</p>
-    <button class="btn btn-primary" onclick="backToLobby()" style="width:auto; padding:12px 30px;">
-      🔄 В лобби
-    </button>
+    <p id="modalText">Текст</p>
+    <div id="modalButtons"></div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- ═══════ ЭКРАН РЕЗУЛЬТАТА ═══════ -->
+<div class="result-overlay" id="screenResult" style="display:none;">
+  <div class="result-text" id="resultText">ПОБЕДА</div>
+  <div style="font-size:13px; color:var(--text2); margin-top:12px; letter-spacing:2px;" id="resultSub"></div>
+  <div class="result-buttons">
+    <button class="btn" id="btnRematch">Реванш</button>
+    <button class="btn" id="btnToLobby">В лобби</button>
+  </div>
+</div>
 
 <script>
-// ===========================
-//  PEER SERVERS CONFIG
-// ===========================
-const PEER_CONFIGS = [
-  // Default PeerJS cloud
-  {
-    host: '0.peerjs.com',
-    port: 443,
-    secure: true,
-    path: '/',
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' },
-        { urls: 'stun:global.stun.twilio.com:3478' },
-        { urls: 'stun:stun.stunprotocol.org:3478' }
-      ]
-    }
-  },
-  // Alternative 1
-  {
-    host: '0.peerjs.com',
-    port: 443,
-    secure: true,
-    path: '/',
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.stunprotocol.org:3478' },
-        { urls: 'stun:stun.l.google.com:19302' },
-        {
-          urls: 'turn:openrelay.metered.ca:80',
-          username: 'openrelayproject',
-          credential: 'openrelayproject'
-        },
-        {
-          urls: 'turn:openrelay.metered.ca:443',
-          username: 'openrelayproject',
-          credential: 'openrelayproject'
-        }
-      ]
-    }
-  },
-  // Alternative 2 with TURN
-  {
-    host: '0.peerjs.com',
-    port: 443,
-    secure: true,
-    path: '/',
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        {
-          urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-          username: 'openrelayproject',
-          credential: 'openrelayproject'
-        }
-      ]
-    }
-  }
-];
+/* ═══════════════════════════════════════════════════════════════
+   "СТАРИКАМ ТУТ НЕ МЕСТО!" — Русские шашки онлайн
+   PeerJS WebRTC P2P — один файл, без серверного кода
+   ═══════════════════════════════════════════════════════════════ */
 
-let currentServerIdx = 0;
-let peer = null;
-let conn = null;
-let myColor = null;
-let board_data = [];
-let selectedCell = null;
-let validMoves = [];
-let currentTurn = 'red';
-let isHost = false;
-let gameActive = false;
-let forcedCaptures = [];
-let multiJumpPiece = null;
-let connectionTimeout = null;
-let retryCount = 0;
+// ─────────────────────────────────────
+// ЗВУК (Web Audio API)
+// ─────────────────────────────────────
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+let soundEnabled = true;
 
-// ===========================
-//  PEER CONNECTION
-// ===========================
-function generateId() {
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playTone(freq, duration, gain = 0.15, type = 'sine') {
+  if (!soundEnabled) return;
+  ensureAudio();
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  g.gain.value = gain;
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime + duration);
+}
+
+function sndClick()   { playTone(800, 0.05, 0.12); }
+function sndMove()    { playTone(400, 0.10, 0.15, 'triangle'); }
+function sndCapture() { playTone(600, 0.08, 0.25, 'square'); }
+function sndWin() {
+  playTone(523, 0.15, 0.15); setTimeout(()=>playTone(659,0.15,0.15),150);
+  setTimeout(()=>playTone(784,0.25,0.2),300);
+}
+function sndLose() {
+  playTone(400, 0.2, 0.15); setTimeout(()=>playTone(300,0.3,0.15),200);
+}
+
+document.getElementById('soundBtn').addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
+});
+
+// ─────────────────────────────────────
+// УТИЛИТЫ
+// ─────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+function show(id) { $(id).style.display = ''; }
+function hide(id) { $(id).style.display = 'none'; }
+function genCode() {
   const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let id = 'SH';
-  for(let i = 0; i < 8; i++) id += c[Math.floor(Math.random() * c.length)];
-  return id;
+  let r = ''; for(let i=0;i<5;i++) r += c[Math.floor(Math.random()*c.length)];
+  return r;
 }
 
-function getPeerConfig() {
-  return PEER_CONFIGS[currentServerIdx] || PEER_CONFIGS[0];
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
 }
 
-function onServerChange() {
-  currentServerIdx = parseInt(document.getElementById('serverSelect').value);
+function vibrate(ms=50) {
+  if (navigator.vibrate) navigator.vibrate(ms);
 }
 
-function createRoom() {
-  const roomId = generateId();
-  const btn = document.getElementById('btnCreate');
-  btn.disabled = true;
-  btn.textContent = '⏳ Подключение к серверу...';
-  document.getElementById('createError').classList.add('hidden');
-
-  const cfg = getPeerConfig();
-
-  if(peer) { peer.destroy(); peer = null; }
-
-  peer = new Peer(roomId, cfg);
-
-  connectionTimeout = setTimeout(() => {
-    if(peer && !peer.open) {
-      peer.destroy();
-      showCreateError('Сервер не отвечает. Попробуйте другой.');
-    }
-  }, 10000);
-
-  peer.on('open', (id) => {
-    clearTimeout(connectionTimeout);
-    document.getElementById('myRoomCode').textContent = id;
-    document.getElementById('roomCodeBox').classList.remove('hidden');
-    btn.textContent = '✅ Комната создана';
-    isHost = true;
-    myColor = 'red';
-    addLogLobby('Комната создана: ' + id);
-  });
-
-  peer.on('connection', (connection) => {
-    conn = connection;
-    setupConnection();
-    const ws = document.getElementById('waitStatus');
-    ws.textContent = '✅ Соперник подключился!';
-    ws.className = 'status-bar connected';
-    setTimeout(() => {
-      conn.send({ type: 'start', color: 'black' });
-      startGame();
-    }, 600);
-  });
-
-  peer.on('error', (err) => {
-    clearTimeout(connectionTimeout);
-    console.error('Peer error:', err);
-    showCreateError(`Ошибка: ${err.type}. Попробуйте другой сервер.`);
-  });
-
-  peer.on('disconnected', () => {
-    console.log('Peer disconnected, reconnecting...');
-    if(peer && !peer.destroyed) {
-      peer.reconnect();
-    }
-  });
-}
-
-function showCreateError(msg) {
-  const btn = document.getElementById('btnCreate');
-  btn.disabled = false;
-  btn.textContent = '⚡ Создать комнату';
-  document.getElementById('roomCodeBox').classList.add('hidden');
-  document.getElementById('createError').classList.remove('hidden');
-  document.getElementById('createErrorMsg').textContent = '❌ ' + msg;
-}
-
-function retryCreate() {
-  retryCount++;
-  currentServerIdx = retryCount % PEER_CONFIGS.length;
-  document.getElementById('serverSelect').value = currentServerIdx;
-  document.getElementById('createError').classList.add('hidden');
-  showToast(`🔄 Пробуем сервер ${currentServerIdx + 1}...`);
-  createRoom();
-}
-
-function joinRoom() {
-  const code = document.getElementById('joinCode').value.trim();
-  if(!code) {
-    showToast('❌ Введите код комнаты!');
-    return;
-  }
-
-  const btn = document.getElementById('btnJoin');
-  btn.disabled = true;
-  document.getElementById('joinStatus').classList.remove('hidden');
-  const statusEl = document.getElementById('joinStatusMsg');
-  statusEl.textContent = '🔗 Подключение к серверу...';
-  statusEl.className = 'status-bar connecting';
-
-  const cfg = getPeerConfig();
-
-  if(peer) { peer.destroy(); peer = null; }
-
-  peer = new Peer(undefined, cfg);
-
-  connectionTimeout = setTimeout(() => {
-    if(peer && !peer.open) {
-      peer.destroy();
-      statusEl.textContent = '❌ Таймаут. Проверьте код или смените сервер.';
-      statusEl.className = 'status-bar error';
-      btn.disabled = false;
-    }
-  }, 12000);
-
-  peer.on('open', () => {
-    clearTimeout(connectionTimeout);
-    statusEl.textContent = '🔗 Подключение к комнате...';
-
-    conn = peer.connect(code, { reliable: true, serialization: 'json' });
-
-    const joinTimeout = setTimeout(() => {
-      statusEl.textContent = '❌ Комната не найдена или код неверный';
-      statusEl.className = 'status-bar error';
-      btn.disabled = false;
-    }, 10000);
-
-    conn.on('open', () => {
-      clearTimeout(joinTimeout);
-      statusEl.textContent = '✅ Подключено!';
-      statusEl.className = 'status-bar connected';
-      setupConnection();
-    });
-
-    conn.on('error', (err) => {
-      clearTimeout(joinTimeout);
-      statusEl.textContent = '❌ Ошибка подключения: ' + err;
-      statusEl.className = 'status-bar error';
-      btn.disabled = false;
-    });
-  });
-
-  peer.on('error', (err) => {
-    clearTimeout(connectionTimeout);
-    console.error('Join peer error:', err);
-    if(err.type === 'peer-unavailable') {
-      statusEl.textContent = '❌ Комната не найдена! Проверьте код.';
-    } else {
-      statusEl.textContent = '❌ Ошибка: ' + err.type;
-    }
-    statusEl.className = 'status-bar error';
-    btn.disabled = false;
-  });
-}
-
-function setupConnection() {
-  conn.on('data', handleMessage);
-
-  conn.on('close', () => {
-    if(gameActive) {
-      showToast('⚠️ Соперник отключился');
-      endGame('Соперник сбежал!', 'Победа — соперник отключился', '🏃');
-    }
-  });
-
-  conn.on('error', (err) => {
-    console.error('Connection error:', err);
-    showToast('⚠️ Ошибка соединения');
-  });
-}
-
-function handleMessage(data) {
-  if(!data || !data.type) return;
-  switch(data.type) {
-    case 'start':
-      myColor = data.color;
-      startGame();
-      break;
-    case 'move':
-      executeMove(data.from, data.to, false);
-      break;
-    case 'surrender':
-      endGame('Победа!', 'Соперник сдался 🏳️', '🏆');
-      break;
-    case 'offerDraw':
-      if(confirm('Соперник предлагает ничью. Принять?')) {
-        conn.send({ type: 'acceptDraw' });
-        endGame('Ничья!', 'Обоюдное согласие', '🤝');
-      } else {
-        conn.send({ type: 'declineDraw' });
-      }
-      break;
-    case 'acceptDraw':
-      endGame('Ничья!', 'Соперник принял ничью', '🤝');
-      break;
-    case 'declineDraw':
-      showToast('❌ Соперник отклонил ничью');
-      break;
-    case 'ping':
-      conn.send({ type: 'pong' });
-      break;
+// Уведомления
+function notifyMove() {
+  if (document.hidden && Notification.permission === 'granted') {
+    new Notification('СТАРИКАМ ТУТ НЕ МЕСТО!', { body: 'Противник сделал ход!' });
   }
 }
-
-function copyCode() {
-  const code = document.getElementById('myRoomCode').textContent;
-  if(navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(code).then(() => showToast('📋 Скопировано!')).catch(() => fallbackCopy(code));
-  } else {
-    fallbackCopy(code);
-  }
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
 }
 
-function fallbackCopy(text) {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.left = '-9999px';
-  document.body.appendChild(ta);
-  ta.select();
-  try { document.execCommand('copy'); showToast('📋 Скопировано!'); }
-  catch(e) { showToast('Код: ' + text); }
-  document.body.removeChild(ta);
+// Статистика localStorage
+function loadStats() {
+  try { return JSON.parse(localStorage.getItem('checkers_stats')) || {w:0,l:0,d:0}; }
+  catch { return {w:0,l:0,d:0}; }
 }
+function saveStats(s) { localStorage.setItem('checkers_stats', JSON.stringify(s)); }
+function displayStats() {
+  const s = loadStats();
+  $('statsDisplay').innerHTML = `Побед: <span>${s.w}</span> | Поражений: <span>${s.l}</span> | Ничьих: <span>${s.d}</span>`;
+}
+displayStats();
 
-// ===========================
-//  GAME LOGIC
-// ===========================
+// ─────────────────────────────────────
+// СОСТОЯНИЕ ИГРЫ
+// ─────────────────────────────────────
+
+/*
+  board[row][col] :
+    0  = пусто
+    1  = шашка игрока 1 (красные)
+    2  = шашка игрока 2 (белые)
+    3  = дамка игрока 1
+    4  = дамка игрока 2
+*/
+
+let gameState = {
+  board: [],         // 8x8 массив
+  turn: 1,           // чей ход (1 или 2)
+  myColor: 0,        // цвет текущего игрока (1 или 2)
+  selected: null,     // {row, col}
+  validMoves: [],     // [{row,col,captures:[...],path:[...]}]
+  mustCapture: false,  // обязательное взятие
+  chainPiece: null,    // шашка в серии взятий {row,col}
+  captured1: 0,        // сколько сбил игрок 1
+  captured2: 0,        // сколько сбил игрок 2
+  moveNum: 0,
+  isLocal: false,
+  gameOver: false,
+  timerPlayer: 60,
+  timerOpponent: 60
+};
+
+let timerInterval = null;
+
 function initBoard() {
-  board_data = [];
-  for(let r = 0; r < 8; r++) {
-    board_data[r] = [];
-    for(let c = 0; c < 8; c++) {
-      board_data[r][c] = null;
-      if((r + c) % 2 === 1) {
-        if(r < 3) board_data[r][c] = { color: 'black', king: false };
-        else if(r > 4) board_data[r][c] = { color: 'red', king: false };
-      }
-    }
-  }
-  currentTurn = 'red';
-  selectedCell = null;
-  validMoves = [];
-  multiJumpPiece = null;
-  forcedCaptures = [];
+  const b = Array.from({length:8}, ()=>Array(8).fill(0));
+  // Игрок 2 (белые) — верхние 3 ряда (ряды 0-2)
+  for (let r=0;r<3;r++)
+    for (let c=0;c<8;c++)
+      if ((r+c)%2===1) b[r][c] = 2;
+  // Игрок 1 (красные) — нижние 3 ряда (ряды 5-7)
+  for (let r=5;r<8;r++)
+    for (let c=0;c<8;c++)
+      if ((r+c)%2===1) b[r][c] = 1;
+  return b;
 }
 
-function startGame() {
-  gameActive = true;
-  initBoard();
-  document.getElementById('lobby').classList.add('hidden');
-  document.getElementById('gameScreen').style.display = 'block';
+function cloneBoard(b) { return b.map(r=>[...r]); }
 
-  document.getElementById('myColorPreview').className = 'piece-preview ' + myColor;
-  document.getElementById('oppColorPreview').className = 'piece-preview ' + (myColor === 'red' ? 'black' : 'red');
-  document.getElementById('myLabel').textContent = myColor === 'red' ? 'Вы 🔴' : 'Вы ⚫';
-  document.getElementById('oppLabel').textContent = myColor === 'red' ? 'Соперник ⚫' : 'Соперник 🔴';
-
-  addLog('🎮 Игра началась!', true);
-  addLog(myColor === 'red' ? '🔴 Ваш ход первый!' : '⏳ Ход соперника (красные)', myColor === 'red');
-
-  renderBoard();
-  updateTurnUI();
-
-  // Keepalive ping
-  setInterval(() => {
-    if(conn && conn.open) conn.send({ type: 'ping' });
-  }, 25000);
+function ownerOf(piece) {
+  if (piece === 1 || piece === 3) return 1;
+  if (piece === 2 || piece === 4) return 2;
+  return 0;
 }
+function isKing(piece) { return piece === 3 || piece === 4; }
 
-function renderBoard() {
-  const boardEl = document.getElementById('board');
-  boardEl.innerHTML = '';
-  const flip = (myColor === 'black');
+// ─────────────────────────────────────
+// ЛОГИКА РУССКИХ ШАШЕК
+// ─────────────────────────────────────
 
-  for(let ri = 0; ri < 8; ri++) {
-    for(let ci = 0; ci < 8; ci++) {
-      const r = flip ? 7 - ri : ri;
-      const c = flip ? 7 - ci : ci;
-      const cell = document.createElement('div');
-      const isDark = (r + c) % 2 === 1;
-      cell.className = 'cell ' + (isDark ? 'dark' : 'light');
-
-      if(isDark) {
-        const mv = validMoves.find(m => m.row === r && m.col === c);
-        if(mv) {
-          cell.classList.add(mv.capture ? 'capture-highlight' : 'highlight');
-          cell.addEventListener('click', () => onMoveClick(r, c));
-        }
-      }
-
-      const p = board_data[r][c];
-      if(p) {
-        const pe = document.createElement('div');
-        pe.className = 'piece ' + (p.color === 'red' ? 'red' : 'black-piece');
-        if(p.king) pe.classList.add('king');
-        if(selectedCell && selectedCell.row === r && selectedCell.col === c) pe.classList.add('selected');
-
-        if(p.color === myColor && currentTurn === myColor && gameActive) {
-          pe.addEventListener('click', (e) => { e.stopPropagation(); onPieceClick(r, c); });
-        } else {
-          pe.classList.add('no-click');
-        }
-        cell.appendChild(pe);
-      }
-
-      boardEl.appendChild(cell);
-    }
-  }
-  updateScores();
-}
-
-function onPieceClick(r, c) {
-  if(currentTurn !== myColor || !gameActive) return;
-  if(multiJumpPiece && (multiJumpPiece.row !== r || multiJumpPiece.col !== c)) {
-    showToast('⚠️ Продолжайте серию взятий!');
-    return;
-  }
-
-  findForcedCaptures();
-  if(forcedCaptures.length > 0 && !forcedCaptures.some(fc => fc.row === r && fc.col === c)) {
-    showToast('⚠️ Обязательное взятие!');
-    return;
-  }
-
-  selectedCell = { row: r, col: c };
-  validMoves = getValidMoves(r, c);
-  if(forcedCaptures.length > 0) validMoves = validMoves.filter(m => m.capture);
-
-  renderBoard();
-}
-
-function onMoveClick(r, c) {
-  if(!selectedCell) return;
-  const mv = validMoves.find(m => m.row === r && m.col === c);
-  if(!mv) return;
-
-  if(conn && conn.open) {
-    conn.send({ type: 'move', from: { row: selectedCell.row, col: selectedCell.col }, to: { row: r, col: c } });
-  }
-  executeMove(selectedCell, { row: r, col: c }, true);
-}
-
-function executeMove(from, to, isMyMove) {
-  const piece = board_data[from.row][from.col];
-  if(!piece) return;
-
-  const dr = to.row - from.row;
-  const dc = to.col - from.col;
-  let captured = false;
-
-  board_data[to.row][to.col] = piece;
-  board_data[from.row][from.col] = null;
-
-  if(Math.abs(dr) === 2 && Math.abs(dc) === 2) {
-    const cr = from.row + dr / 2;
-    const cc = from.col + dc / 2;
-    board_data[cr][cc] = null;
-    captured = true;
-    addLog(`${piece.color === 'red' ? '🔴' : '⚫'} бьёт!`, true);
-    spawnParticles(to.row, to.col);
-  }
-
-  // Promotion
-  if(piece.color === 'red' && to.row === 0 && !piece.king) {
-    piece.king = true;
-    addLog('🔴 → 👑 Дамка!', true);
-  }
-  if(piece.color === 'black' && to.row === 7 && !piece.king) {
-    piece.king = true;
-    addLog('⚫ → 👑 Дамка!', true);
-  }
-
-  // Multi-jump
-  if(captured) {
-    const next = getValidMoves(to.row, to.col).filter(m => m.capture);
-    if(next.length > 0) {
-      multiJumpPiece = { row: to.row, col: to.col };
-      if((isMyMove && piece.color === myColor) || (!isMyMove && piece.color !== myColor)) {
-        selectedCell = { row: to.row, col: to.col };
-        validMoves = next;
-      } else {
-        selectedCell = null;
-        validMoves = [];
-      }
-      renderBoard();
-      return;
-    }
-  }
-
-  multiJumpPiece = null;
-  selectedCell = null;
-  validMoves = [];
-  forcedCaptures = [];
-  currentTurn = currentTurn === 'red' ? 'black' : 'red';
-
-  renderBoard();
-  updateTurnUI();
-  checkWinCondition();
-}
-
-function getValidMoves(r, c) {
-  const p = board_data[r][c];
-  if(!p) return [];
+// Получить все возможные ходы для шашки (row,col)
+function getMovesForPiece(board, row, col, onlyCaptures=false) {
+  const piece = board[row][col];
+  const owner = ownerOf(piece);
+  if (!owner) return [];
+  const king = isKing(piece);
   const moves = [];
 
-  // Normal moves
-  let dirs;
-  if(p.king) dirs = [[-1,-1],[-1,1],[1,-1],[1,1]];
-  else if(p.color === 'red') dirs = [[-1,-1],[-1,1]];
-  else dirs = [[1,-1],[1,1]];
-
-  for(const [dr, dc] of dirs) {
-    const nr = r + dr, nc = c + dc;
-    if(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && !board_data[nr][nc]) {
-      moves.push({ row: nr, col: nc, capture: false });
+  if (king) {
+    // Дамка — ходит/бьёт по диагонали на любое расстояние
+    const dirs = [[-1,-1],[-1,1],[1,-1],[1,1]];
+    for (const [dr,dc] of dirs) {
+      let r=row+dr, c=col+dc;
+      let foundEnemy = null;
+      while (r>=0 && r<8 && c>=0 && c<8) {
+        const cell = board[r][c];
+        if (ownerOf(cell) === owner) break; // свои — стоп
+        if (ownerOf(cell) !== 0 && ownerOf(cell) !== owner) {
+          if (foundEnemy) break; // вторая вражеская — стоп
+          foundEnemy = {row:r, col:c};
+          r+=dr; c+=dc;
+          continue;
+        }
+        // Пустая клетка
+        if (foundEnemy) {
+          // Взятие — можно приземлиться
+          moves.push({row:r, col:c, captures:[foundEnemy], isCapture:true});
+        } else if (!onlyCaptures) {
+          // Обычный ход
+          moves.push({row:r, col:c, captures:[], isCapture:false});
+        }
+        r+=dr; c+=dc;
+      }
     }
-  }
-
-  // Captures (all 4 dirs for everyone)
-  for(const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) {
-    const mr = r + dr, mc = c + dc;
-    const nr = r + dr*2, nc = c + dc*2;
-    if(nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-      const mid = board_data[mr][mc];
-      if(mid && mid.color !== p.color && !board_data[nr][nc]) {
-        moves.push({ row: nr, col: nc, capture: true });
+  } else {
+    // Обычная шашка
+    const fwd = (owner===1) ? -1 : 1;
+    // Обычные ходы (только вперёд)
+    if (!onlyCaptures) {
+      for (const dc of [-1,1]) {
+        const nr=row+fwd, nc=col+dc;
+        if (nr>=0 && nr<8 && nc>=0 && nc<8 && board[nr][nc]===0) {
+          moves.push({row:nr, col:nc, captures:[], isCapture:false});
+        }
+      }
+    }
+    // Взятия (вперёд И назад)
+    for (const dr of [-1,1]) {
+      for (const dc of [-1,1]) {
+        const mr=row+dr, mc=col+dc;
+        const lr=row+2*dr, lc=col+2*dc;
+        if (lr>=0 && lr<8 && lc>=0 && lc<8) {
+          const mid = board[mr][mc];
+          if (ownerOf(mid)!==0 && ownerOf(mid)!==owner && board[lr][lc]===0) {
+            moves.push({row:lr, col:lc, captures:[{row:mr,col:mc}], isCapture:true});
+          }
+        }
       }
     }
   }
   return moves;
 }
 
-function findForcedCaptures() {
-  forcedCaptures = [];
-  for(let r = 0; r < 8; r++)
-    for(let c = 0; c < 8; c++) {
-      const p = board_data[r][c];
-      if(p && p.color === currentTurn && getValidMoves(r, c).some(m => m.capture))
-        forcedCaptures.push({ row: r, col: c });
+// Найти все цепочки взятий для шашки (рекурсивно)
+function getCaptureChains(board, row, col, alreadyCaptured=[]) {
+  const captures = getMovesForPiece(board, row, col, true);
+  // Фильтруем: не бить уже сбитую шашку (для серии)
+  const valid = captures.filter(m => {
+    return !m.captures.some(c => alreadyCaptured.some(a => a.row===c.row && a.col===c.col));
+  });
+
+  if (valid.length === 0) {
+    return alreadyCaptured.length > 0 ? [{ row, col, totalCaptures: [...alreadyCaptured] }] : [];
+  }
+
+  const chains = [];
+  for (const m of valid) {
+    const newBoard = cloneBoard(board);
+    const piece = newBoard[row][col];
+    newBoard[row][col] = 0;
+    for (const c of m.captures) newBoard[c.row][c.col] = 0;
+    newBoard[m.row][m.col] = piece;
+    const newCaptured = [...alreadyCaptured, ...m.captures];
+    const subChains = getCaptureChains(newBoard, m.row, m.col, newCaptured);
+    if (subChains.length === 0) {
+      chains.push({ row:m.row, col:m.col, totalCaptures: newCaptured });
+    } else {
+      chains.push(...subChains);
     }
+  }
+  return chains;
 }
 
-function checkWinCondition() {
-  let rc = 0, bc = 0, rm = false, bm = false;
-  for(let r = 0; r < 8; r++)
-    for(let c = 0; c < 8; c++) {
-      const p = board_data[r][c];
-      if(p) {
-        if(p.color === 'red') { rc++; if(getValidMoves(r,c).length) rm = true; }
-        else { bc++; if(getValidMoves(r,c).length) bm = true; }
+// Все допустимые ходы для игрока
+function getAllMoves(board, player) {
+  const allCaptures = [];
+  const allSimple = [];
+
+  for (let r=0;r<8;r++) {
+    for (let c=0;c<8;c++) {
+      if (ownerOf(board[r][c]) !== player) continue;
+      // Цепочки взятий
+      const chains = getCaptureChains(board, r, c);
+      for (const ch of chains) {
+        allCaptures.push({ from:{row:r,col:c}, to:{row:ch.row,col:ch.col}, captures:ch.totalCaptures, isCapture:true });
+      }
+      // Простые ходы
+      const simple = getMovesForPiece(board, r, c, false).filter(m=>!m.isCapture);
+      for (const s of simple) {
+        allSimple.push({ from:{row:r,col:c}, to:{row:s.row,col:s.col}, captures:[], isCapture:false });
       }
     }
-
-  if(rc === 0 || (currentTurn === 'red' && !rm)) {
-    endGame(myColor === 'black' ? 'Победа!' : 'Поражение!',
-            'Красные проиграли', myColor === 'black' ? '🏆' : '💀');
-  } else if(bc === 0 || (currentTurn === 'black' && !bm)) {
-    endGame(myColor === 'red' ? 'Победа!' : 'Поражение!',
-            'Чёрные проиграли', myColor === 'red' ? '🏆' : '💀');
   }
+
+  // Обязательное взятие: если есть хоть одно взятие — разрешены только взятия
+  if (allCaptures.length > 0) {
+    // Правило: выбираем максимальную длину цепочки? В русских шашках
+    // НЕ обязательно бить максимум, но обязательно бить. Оставляем все взятия.
+    return { moves: allCaptures, mustCapture: true };
+  }
+  return { moves: allSimple, mustCapture: false };
 }
 
-function updateTurnUI() {
-  const ti = document.getElementById('turnIndicator');
-  if(currentTurn === myColor) {
-    ti.textContent = '🔥 Ваш ход';
-    ti.className = 'turn-indicator your-turn';
+// Получить ходы конкретной шашки с учётом обязательного взятия
+function getMovesFor(board, row, col, player) {
+  const {moves, mustCapture} = getAllMoves(board, player);
+  return {
+    moves: moves.filter(m => m.from.row===row && m.from.col===col),
+    mustCapture
+  };
+}
+
+// Промотирование в дамку
+function shouldCrown(piece, row) {
+  if (piece===1 && row===0) return 3;
+  if (piece===2 && row===7) return 4;
+  return piece;
+}
+
+// Проверка конца игры
+function checkGameOver(board, nextPlayer) {
+  const {moves} = getAllMoves(board, nextPlayer);
+  if (moves.length === 0) return true;
+  // Проверить есть ли шашки
+  let has = false;
+  for (let r=0;r<8;r++) for (let c=0;c<8;c++) if (ownerOf(board[r][c])===nextPlayer) has=true;
+  return !has;
+}
+
+// Валидация хода
+function validateMove(board, player, from, to, captures) {
+  const {moves} = getAllMoves(board, player);
+  return moves.some(m =>
+    m.from.row===from.row && m.from.col===from.col &&
+    m.to.row===to.row && m.to.col===to.col &&
+    m.captures.length===captures.length &&
+    m.captures.every((c,i)=>c.row===captures[i].row && c.col===captures[i].col)
+  );
+}
+
+// Применить ход
+function applyMove(board, from, to, captures) {
+  const b = cloneBoard(board);
+  let piece = b[from.row][from.col];
+  b[from.row][from.col] = 0;
+  for (const c of captures) b[c.row][c.col] = 0;
+  piece = shouldCrown(piece, to.row);
+  b[to.row][to.col] = piece;
+  return { board: b, crowned: isKing(piece) && !isKing(board[from.row][from.col]) };
+}
+
+// ─────────────────────────────────────
+// РЕНДЕР ДОСКИ
+// ─────────────────────────────────────
+const boardEl = $('board');
+
+function renderBoard() {
+  boardEl.innerHTML = '';
+  const flipped = (!gameState.isLocal && gameState.myColor === 2);
+
+  for (let ri=0; ri<8; ri++) {
+    for (let ci=0; ci<8; ci++) {
+      const r = flipped ? 7-ri : ri;
+      const c = flipped ? 7-ci : ci;
+
+      const cell = document.createElement('div');
+      cell.className = 'cell ' + ((r+c)%2===0 ? 'light' : 'dark');
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+
+      // Подсветка выбранной
+      if (gameState.selected && gameState.selected.row===r && gameState.selected.col===c) {
+        cell.classList.add('selected');
+      }
+
+      // Подсветка возможных ходов
+      if (gameState.validMoves.some(m=>m.to.row===r && m.to.col===c)) {
+        cell.classList.add('highlight');
+      }
+
+      // Шашка
+      const piece = gameState.board[r][c];
+      if (piece) {
+        const p = document.createElement('div');
+        p.className = 'piece ' + (ownerOf(piece)===1 ? 'p1' : 'p2');
+        if (isKing(piece)) p.classList.add('king');
+        if (gameState.selected && gameState.selected.row===r && gameState.selected.col===c) {
+          p.classList.add('selected');
+        }
+        cell.appendChild(p);
+      }
+
+      cell.addEventListener('click', ()=>onCellClick(r,c));
+      boardEl.appendChild(cell);
+    }
+  }
+
+  updateUI();
+}
+
+function updateUI() {
+  const isMyTurn = gameState.turn === gameState.myColor;
+  const oppColor = gameState.myColor === 1 ? 2 : 1;
+
+  // Инфо-бары
+  $('dotPlayer').style.background = gameState.myColor===1 ? 'var(--p1)' : 'var(--p2)';
+  $('dotOpponent').style.background = oppColor===1 ? 'var(--p1)' : 'var(--p2)';
+  $('namePlayer').textContent = gameState.myColor===1 ? 'Вы (красные)' : 'Вы (белые)';
+  $('nameOpponent').textContent = gameState.isLocal
+    ? (gameState.turn===1 ? '← Ход красных' : '← Ход белых')
+    : (oppColor===1 ? 'Противник (красные)' : 'Противник (белые)');
+
+  $('barPlayer').className = 'player-bar' + (isMyTurn && !gameState.isLocal ? ' active-turn' : '') +
+    (gameState.isLocal && gameState.turn===gameState.myColor ? ' active-turn' : '');
+  $('barOpponent').className = 'player-bar' + (!isMyTurn && !gameState.isLocal ? ' active-turn' : '') +
+    (gameState.isLocal && gameState.turn!==gameState.myColor ? ' active-turn' : '');
+
+  $('capturedPlayer').textContent = '×' + (gameState.myColor===1 ? gameState.captured1 : gameState.captured2);
+  $('capturedOpponent').textContent = '×' + (gameState.myColor===1 ? gameState.captured2 : gameState.captured1);
+
+  // Таймеры
+  $('timerPlayer').textContent = gameState.timerPlayer;
+  $('timerOpponent').textContent = gameState.timerOpponent;
+  $('timerPlayer').className = 'timer' + (gameState.timerPlayer <= 10 && isMyTurn ? ' urgent' : '');
+  $('timerOpponent').className = 'timer' + (gameState.timerOpponent <= 10 && !isMyTurn ? ' urgent' : '');
+}
+
+// ─────────────────────────────────────
+// ОБРАБОТКА КЛИКОВ ПО ДОСКЕ
+// ─────────────────────────────────────
+function onCellClick(row, col) {
+  if (gameState.gameOver) return;
+
+  const canPlay = gameState.isLocal || (gameState.turn === gameState.myColor);
+  if (!canPlay) return;
+
+  const currentPlayer = gameState.isLocal ? gameState.turn : gameState.myColor;
+  const piece = gameState.board[row][col];
+
+  // Если есть цепочка взятий в процессе
+  if (gameState.chainPiece) {
+    // Можно кликнуть только на допустимое поле для продолжения
+    const mv = gameState.validMoves.find(m=>m.to.row===row && m.to.col===col);
+    if (mv) {
+      executeMove(mv, currentPlayer);
+    }
+    return;
+  }
+
+  // Клик по подсвеченной клетке — ход
+  const mv = gameState.validMoves.find(m=>m.to.row===row && m.to.col===col);
+  if (mv) {
+    sndClick();
+    executeMove(mv, currentPlayer);
+    return;
+  }
+
+  // Клик по своей шашке — выбрать
+  if (ownerOf(piece) === currentPlayer) {
+    sndClick();
+    const {moves, mustCapture} = getMovesFor(gameState.board, row, col, currentPlayer);
+    gameState.selected = {row, col};
+    gameState.validMoves = moves;
+    gameState.mustCapture = mustCapture;
+    renderBoard();
+    return;
+  }
+
+  // Клик по пустой / чужой — сбросить выбор
+  gameState.selected = null;
+  gameState.validMoves = [];
+  renderBoard();
+}
+
+function executeMove(mv, player) {
+  const {board:newBoard, crowned} = applyMove(gameState.board, mv.from, mv.to, mv.captures);
+  const captureCount = mv.captures.length;
+
+  // Звуки
+  if (captureCount > 0) sndCapture(); else sndMove();
+
+  // Обновляем счётчик взятий
+  if (player === 1) gameState.captured1 += captureCount;
+  else gameState.captured2 += captureCount;
+
+  gameState.board = newBoard;
+  gameState.selected = null;
+  gameState.validMoves = [];
+  gameState.chainPiece = null;
+
+  // Лог хода
+  logMove(player, mv.from, mv.to, captureCount, crowned);
+
+  // Отправляем ход по сети
+  if (!gameState.isLocal) {
+    sendData({
+      type:'move',
+      from: mv.from,
+      to: mv.to,
+      captured: mv.captures,
+      crowned: crowned
+    });
+  }
+
+  // Проверка конца серии взятий (для простой шашки с захватом):
+  // На самом деле в нашей системе цепочки уже полностью вычислены
+  // (getAllMoves считает полные цепочки), поэтому один ход = полная цепочка.
+
+  // Смена хода
+  resetTimer();
+  gameState.turn = player === 1 ? 2 : 1;
+
+  // В локальном режиме меняем myColor для правильной подсветки
+  if (gameState.isLocal) {
+    gameState.myColor = gameState.turn;
+  }
+
+  // Проверка конца игры
+  if (checkGameOver(gameState.board, gameState.turn)) {
+    endGame(player === gameState.myColor ? 'win' :
+      (gameState.isLocal ? (player===1 ? 'winRed' : 'winWhite') : 'lose'));
+    return;
+  }
+
+  renderBoard();
+}
+
+function logMove(player, from, to, captures, crowned) {
+  gameState.moveNum++;
+  const letters = 'abcdefgh';
+  const fromStr = letters[from.col] + (8-from.row);
+  const toStr = letters[to.col] + (8-to.row);
+  const sep = captures > 0 ? ':' : '-';
+  const crownMark = crowned ? '(Д)' : '';
+  const color = player === 1 ? '🔴' : '⚪';
+  const entry = document.createElement('div');
+  entry.textContent = `${gameState.moveNum}. ${color} ${fromStr}${sep}${toStr} ${captures>0?'×'+captures:''} ${crownMark}`;
+  $('moveLog').appendChild(entry);
+  $('moveLog').scrollTop = $('moveLog').scrollHeight;
+}
+
+// ─────────────────────────────────────
+// ТАЙМЕР ХОДА (60 секунд)
+// ─────────────────────────────────────
+function resetTimer() {
+  gameState.timerPlayer = 60;
+  gameState.timerOpponent = 60;
+}
+
+function startTimer() {
+  stopTimer();
+  timerInterval = setInterval(()=> {
+    if (gameState.gameOver) { stopTimer(); return; }
+    const isMyTurn = gameState.turn === gameState.myColor;
+    if (isMyTurn) {
+      gameState.timerPlayer--;
+      if (gameState.timerPlayer <= 0) {
+        // Время вышло — автопоражение
+        if (!gameState.isLocal) {
+          sendData({type:'resign'});
+          endGame('lose');
+        } else {
+          endGame(gameState.turn===1 ? 'winWhite' : 'winRed');
+        }
+      }
+    } else if (!gameState.isLocal) {
+      gameState.timerOpponent--;
+      // Не наказываем оппонента — он управляет своим таймером сам
+    }
+    updateUI();
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval=null; }
+}
+
+// ─────────────────────────────────────
+// КОНЕЦ ИГРЫ
+// ─────────────────────────────────────
+function endGame(result) {
+  gameState.gameOver = true;
+  stopTimer();
+
+  const el = $('resultText');
+  const sub = $('resultSub');
+
+  if (result === 'win') {
+    el.textContent = 'ПОБЕДА'; el.className = 'result-text win';
+    sub.textContent = 'Противник повержен'; sndWin();
+    const s=loadStats(); s.w++; saveStats(s);
+  } else if (result === 'lose') {
+    el.textContent = 'ПОРАЖЕНИЕ'; el.className = 'result-text lose';
+    sub.textContent = 'В другой раз повезёт'; sndLose();
+    const s=loadStats(); s.l++; saveStats(s);
+  } else if (result === 'draw') {
+    el.textContent = 'НИЧЬЯ'; el.className = 'result-text draw';
+    sub.textContent = 'Достойная партия';
+    const s=loadStats(); s.d++; saveStats(s);
+  } else if (result === 'disconnect') {
+    el.textContent = 'ПОБЕДА'; el.className = 'result-text win';
+    sub.textContent = 'Противник отключился';
+    const s=loadStats(); s.w++; saveStats(s);
+  } else if (result === 'winRed') {
+    el.textContent = 'КРАСНЫЕ ПОБЕДИЛИ'; el.className = 'result-text win';
+    sub.textContent = ''; sndWin();
+  } else if (result === 'winWhite') {
+    el.textContent = 'БЕЛЫЕ ПОБЕДИЛИ'; el.className = 'result-text lose';
+    sub.textContent = ''; sndWin();
+  }
+
+  show('screenResult');
+  displayStats();
+}
+
+// ─────────────────────────────────────
+// СЕТЬ — PeerJS
+// ─────────────────────────────────────
+let peer = null;
+let conn = null;
+let roomCode = '';
+let isHost = false;
+let pingInterval = null;
+let lastPingTime = 0;
+let reconnectAttempts = 0;
+const MAX_RECONNECT = 3;
+
+function getPeerConfig() {
+  const host = $('inputHost').value.trim() || '0.peerjs.com';
+  const port = parseInt($('inputPort').value.trim()) || 443;
+  const path = $('inputPath').value.trim() || '/';
+  return { host, port, path, secure: port===443, debug: 1 };
+}
+
+function initPeer(id) {
+  if (peer) { peer.destroy(); }
+  const cfg = getPeerConfig();
+  console.log('[PeerJS] Подключение к', cfg.host, ':', cfg.port);
+  peer = new Peer(id || undefined, cfg);
+
+  peer.on('open', (myId) => {
+    console.log('[PeerJS] Подключен, ID:', myId);
+    $('statusDot').classList.add('online');
+    $('statusText').textContent = 'Подключен к серверу';
+    $('btnCreate').disabled = false;
+    $('btnJoin').disabled = false;
+  });
+
+  peer.on('error', (err) => {
+    console.error('[PeerJS] Ошибка:', err.type, err);
+    $('statusDot').classList.remove('online');
+    if (err.type === 'peer-unavailable') {
+      toast('Комната не найдена!');
+      $('statusText').textContent = 'Комната не найдена';
+    } else if (err.type === 'unavailable-id') {
+      // ID занят, генерируем новый
+      initPeer('CHKRS-' + genCode() + '-' + genCode());
+    } else {
+      $('statusText').textContent = 'Ошибка: ' + err.type;
+    }
+  });
+
+  peer.on('disconnected', () => {
+    console.log('[PeerJS] Отключён от сервера');
+    $('statusDot').classList.remove('online');
+    $('statusText').textContent = 'Отключён от сервера';
+    // Пытаемся переподключиться
+    if (!peer.destroyed) peer.reconnect();
+  });
+
+  peer.on('connection', (c) => {
+    console.log('[PeerJS] Входящее подключение от:', c.peer);
+    if (conn) { c.close(); return; } // уже есть соединение
+    conn = c;
+    setupConnection();
+  });
+}
+
+function setupConnection() {
+  conn.on('open', () => {
+    console.log('[NET] Соединение установлено');
+    toast('Противник подключился!');
+    reconnectAttempts = 0;
+    startGame();
+    startPing();
+  });
+
+  conn.on('data', (data) => {
+    handleMessage(data);
+  });
+
+  conn.on('close', () => {
+    console.log('[NET] Соединение закрыто');
+    stopPing();
+    if (!gameState.gameOver) {
+      handleDisconnect();
+    }
+  });
+
+  conn.on('error', (err) => {
+    console.error('[NET] Ошибка соединения:', err);
+  });
+}
+
+function handleDisconnect() {
+  reconnectAttempts++;
+  if (reconnectAttempts <= MAX_RECONNECT) {
+    toast(`Соединение потеряно. Попытка ${reconnectAttempts}/${MAX_RECONNECT}...`);
+    // Ждём переподключения
+    setTimeout(() => {
+      if (!conn || !conn.open) {
+        if (reconnectAttempts < MAX_RECONNECT) {
+          handleDisconnect();
+        } else {
+          endGame('disconnect');
+        }
+      }
+    }, 3000);
   } else {
-    ti.textContent = '⏳ Ход соперника';
-    ti.className = 'turn-indicator opponent-turn';
+    endGame('disconnect');
   }
 }
 
-function updateScores() {
-  let my = 0, opp = 0;
-  for(let r = 0; r < 8; r++)
-    for(let c = 0; c < 8; c++)
-      if(board_data[r][c]) {
-        if(board_data[r][c].color === myColor) my++; else opp++;
+function sendData(data) {
+  if (conn && conn.open) {
+    conn.send(data);
+    console.log('[NET] Отправлено:', data.type);
+  }
+}
+
+function handleMessage(data) {
+  console.log('[NET] Получено:', data.type);
+
+  switch(data.type) {
+    case 'move':
+      // Валидация хода
+      if (!validateMove(gameState.board, gameState.turn, data.from, data.to, data.captured)) {
+        console.error('[NET] Невалидный ход от противника!');
+        toast('Обнаружен невалидный ход!');
+        return;
       }
-  document.getElementById('myScore').textContent = '⬤ ' + my;
-  document.getElementById('oppScore').textContent = '⬤ ' + opp;
-}
+      // Применяем ход
+      const {board:nb, crowned} = applyMove(gameState.board, data.from, data.to, data.captured);
+      const captCount = data.captured.length;
+      if (captCount>0) sndCapture(); else sndMove();
+      if (gameState.turn===1) gameState.captured1 += captCount;
+      else gameState.captured2 += captCount;
+      gameState.board = nb;
+      logMove(gameState.turn, data.from, data.to, captCount, crowned);
+      resetTimer();
+      gameState.turn = gameState.turn===1 ? 2 : 1;
+      gameState.selected = null;
+      gameState.validMoves = [];
+      gameState.chainPiece = null;
+      // Проверка конца игры
+      if (checkGameOver(gameState.board, gameState.turn)) {
+        endGame(gameState.turn===gameState.myColor ? 'lose' : 'win');
+      }
+      renderBoard();
+      vibrate();
+      notifyMove();
+      break;
 
-// ===========================
-//  UI
-// ===========================
-function addLog(text, imp = false) {
-  const log = document.getElementById('gameLog');
-  const e = document.createElement('div');
-  e.className = 'log-entry' + (imp ? ' important' : '');
-  const t = new Date().toLocaleTimeString('ru', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-  e.textContent = `[${t}] ${text}`;
-  log.appendChild(e);
-  log.scrollTop = log.scrollHeight;
-}
+    case 'resign':
+      endGame('win');
+      break;
 
-function addLogLobby(text) {
-  console.log('[LOBBY]', text);
-}
+    case 'draw_offer':
+      showModal('Противник предлагает ничью', [
+        {text:'Принять', action:()=>{sendData({type:'draw_accept'}); endGame('draw'); hideModal();}},
+        {text:'Отклонить', action:()=>{sendData({type:'draw_decline'}); hideModal();}}
+      ]);
+      break;
 
-function showToast(text) {
-  const t = document.getElementById('toast');
-  t.textContent = text;
-  t.classList.add('show');
-  clearTimeout(t._tid);
-  t._tid = setTimeout(() => t.classList.remove('show'), 3000);
-}
+    case 'draw_accept':
+      endGame('draw');
+      break;
 
-function surrender() {
-  if(!gameActive) return;
-  if(confirm('Точно сдаётесь?')) {
-    if(conn && conn.open) conn.send({ type: 'surrender' });
-    endGame('Поражение!', 'Вы сдались', '💀');
+    case 'draw_decline':
+      toast('Противник отклонил ничью');
+      break;
+
+    case 'rematch_offer':
+      showModal('Противник предлагает реванш', [
+        {text:'Принять', action:()=>{sendData({type:'rematch_accept'}); startRematch(); hideModal();}},
+        {text:'Отклонить', action:()=>{hideModal();}}
+      ]);
+      break;
+
+    case 'rematch_accept':
+      startRematch();
+      break;
+
+    case 'ping':
+      sendData({type:'pong', time:data.time});
+      break;
+
+    case 'pong':
+      const ping = Date.now() - data.time;
+      $('pingDisplay').textContent = `Пинг: ${ping}ms`;
+      break;
   }
 }
 
-function offerDraw() {
-  if(!gameActive) return;
-  if(conn && conn.open) conn.send({ type: 'offerDraw' });
-  showToast('🤝 Предложение отправлено');
+// Пинг
+function startPing() {
+  stopPing();
+  pingInterval = setInterval(()=>{
+    sendData({type:'ping', time:Date.now()});
+  }, 5000);
+}
+function stopPing() {
+  if (pingInterval) { clearInterval(pingInterval); pingInterval=null; }
 }
 
-function endGame(title, text, icon) {
-  gameActive = false;
-  document.getElementById('resultTitle').textContent = title;
-  document.getElementById('resultText').textContent = text;
-  document.getElementById('resultIcon').textContent = icon;
-  document.getElementById('modalOverlay').classList.add('active');
-}
-
-function backToLobby() {
-  document.getElementById('modalOverlay').classList.remove('active');
-  document.getElementById('gameScreen').style.display = 'none';
-  document.getElementById('lobby').classList.remove('hidden');
-  document.getElementById('btnCreate').disabled = false;
-  document.getElementById('btnCreate').textContent = '⚡ Создать комнату';
-  document.getElementById('btnJoin').disabled = false;
-  document.getElementById('roomCodeBox').classList.add('hidden');
-  document.getElementById('joinStatus').classList.add('hidden');
-  document.getElementById('createError').classList.add('hidden');
-  document.getElementById('joinCode').value = '';
-  document.getElementById('gameLog').innerHTML = '<h3>📜 Журнал</h3>';
-  if(conn) { try { conn.close(); } catch(e) {} conn = null; }
-  if(peer) { try { peer.destroy(); } catch(e) {} peer = null; }
-  gameActive = false;
-  multiJumpPiece = null;
-}
-
-function spawnParticles(row, col) {
-  const bEl = document.getElementById('board');
-  const rect = bEl.getBoundingClientRect();
-  const cs = rect.width / 8;
-  const flip = myColor === 'black';
-  const dr = flip ? 7 - row : row;
-  const dc = flip ? 7 - col : col;
-  const cx = rect.left + dc * cs + cs / 2;
-  const cy = rect.top + dr * cs + cs / 2;
-
-  for(let i = 0; i < 10; i++) {
-    const p = document.createElement('div');
-    p.className = 'particle';
-    const s = 3 + Math.random() * 7;
-    p.style.width = s + 'px';
-    p.style.height = s + 'px';
-    p.style.background = `hsl(${Math.random()*40+10},100%,${50+Math.random()*30}%)`;
-    p.style.left = cx + 'px';
-    p.style.top = cy + 'px';
-    const a = Math.random() * Math.PI * 2;
-    const d = 30 + Math.random() * 70;
-    p.style.setProperty('--dx', Math.cos(a)*d+'px');
-    p.style.setProperty('--dy', Math.sin(a)*d+'px');
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 1000);
+// ─────────────────────────────────────
+// МОДАЛЬНОЕ ОКНО
+// ─────────────────────────────────────
+function showModal(text, buttons) {
+  $('modalText').textContent = text;
+  const bc = $('modalButtons');
+  bc.innerHTML = '';
+  for (const b of buttons) {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-sm';
+    btn.textContent = b.text;
+    btn.addEventListener('click', b.action);
+    bc.appendChild(btn);
   }
+  show('modal');
 }
+function hideModal() { hide('modal'); }
+
+// ─────────────────────────────────────
+// НАВИГАЦИЯ ЭКРАНОВ
+// ─────────────────────────────────────
+function showScreen(name) {
+  hide('screenLobby'); hide('screenWaiting'); hide('screenGame'); hide('screenResult');
+  show('screen' + name);
+}
+
+// ─────────────────────────────────────
+// СОЗДАТЬ КОМНАТУ
+// ─────────────────────────────────────
+$('btnCreate').addEventListener('click', () => {
+  sndClick();
+  roomCode = genCode();
+  const peerId = 'CHKRS-' + roomCode;
+  isHost = true;
+  console.log('[ROOM] Создаю комнату:', roomCode, '→ PeerID:', peerId);
+
+  // Пересоздаём пир с нужным ID
+  if (peer) peer.destroy();
+  const cfg = getPeerConfig();
+  peer = new Peer(peerId, cfg);
+
+  peer.on('open', () => {
+    console.log('[ROOM] Зарегистрирован как', peerId);
+    $('roomCodeDisplay').textContent = roomCode;
+    showScreen('Waiting');
+  });
+
+  peer.on('error', (err) => {
+    console.error('[ROOM] Ошибка:', err);
+    if (err.type === 'unavailable-id') {
+      toast('Код занят, попробуйте ещё раз');
+      roomCode = genCode();
+      $('btnCreate').click();
+    } else {
+      toast('Ошибка: ' + err.type);
+    }
+  });
+
+  peer.on('connection', (c) => {
+    console.log('[ROOM] Подключился игрок:', c.peer);
+    conn = c;
+    setupConnection();
+  });
+});
+
+// Копировать код
+$('roomCodeDisplay').addEventListener('click', () => {
+  navigator.clipboard.writeText(roomCode).then(()=>toast('Код скопирован!')).catch(()=>{});
+});
+
+// Отмена ожидания
+$('btnCancelWait').addEventListener('click', () => {
+  sndClick();
+  if (peer) peer.destroy();
+  initPeer();
+  showScreen('Lobby');
+});
+
+// ─────────────────────────────────────
+// ПОДКЛЮЧИТЬСЯ К КОМНАТЕ
+// ─────────────────────────────────────
+$('btnJoin').addEventListener('click', () => {
+  sndClick();
+  const code = $('inputCode').value.trim().toUpperCase();
+  if (!code || code.length < 3) { toast('Введите код комнаты'); return; }
+
+  const targetId = 'CHKRS-' + code;
+  isHost = false;
+  console.log('[JOIN] Подключаюсь к:', targetId);
+
+  // Переинициализируем пир
+  if (peer) peer.destroy();
+  const cfg = getPeerConfig();
+  peer = new Peer(undefined, cfg);
+
+  peer.on('open', () => {
+    console.log('[JOIN] Мой ID:', peer.id);
+    conn = peer.connect(targetId, { reliable: true, serialization: 'json' });
+    setupConnection();
+  });
+
+  peer.on('error', (err) => {
+    console.error('[JOIN] Ошибка:', err);
+    toast('Не удалось подключиться: ' + err.type);
+    initPeer();
+    showScreen('Lobby');
+  });
+});
+
+// Enter в поле кода
+$('inputCode').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') $('btnJoin').click();
+});
+
+// ─────────────────────────────────────
+// ЛОКАЛЬНАЯ ИГРА
+// ─────────────────────────────────────
+$('btnLocal').addEventListener('click', () => {
+  sndClick();
+  gameState.isLocal = true;
+  gameState.myColor = 1;
+  gameState.board = initBoard();
+  gameState.turn = 1;
+  gameState.captured1 = 0;
+  gameState.captured2 = 0;
+  gameState.moveNum = 0;
+  gameState.gameOver = false;
+  gameState.selected = null;
+  gameState.validMoves = [];
+  gameState.chainPiece = null;
+  $('moveLog').innerHTML = '';
+  $('btnResign').style.display = 'none';
+  $('btnDraw').style.display = 'none';
+  resetTimer();
+  startTimer();
+  showScreen('Game');
+  renderBoard();
+});
+
+// ─────────────────────────────────────
+// НАЧАЛО ОНЛАЙН ИГРЫ
+// ─────────────────────────────────────
+function startGame() {
+  gameState.isLocal = false;
+  gameState.myColor = isHost ? 1 : 2; // хост = красные, гость = белые
+  gameState.board = initBoard();
+  gameState.turn = 1; // красные ходят первыми
+  gameState.captured1 = 0;
+  gameState.captured2 = 0;
+  gameState.moveNum = 0;
+  gameState.gameOver = false;
+  gameState.selected = null;
+  gameState.validMoves = [];
+  gameState.chainPiece = null;
+  $('moveLog').innerHTML = '';
+  $('btnResign').style.display = '';
+  $('btnDraw').style.display = '';
+  resetTimer();
+  startTimer();
+  showScreen('Game');
+  renderBoard();
+}
+
+// ─────────────────────────────────────
+// РЕВАНШ
+// ─────────────────────────────────────
+$('btnRematch').addEventListener('click', () => {
+  sndClick();
+  if (gameState.isLocal) {
+    startRematch();
+    return;
+  }
+  sendData({type:'rematch_offer'});
+  toast('Предложение реванша отправлено');
+});
+
+function startRematch() {
+  hide('screenResult');
+  // Меняем цвета
+  if (!gameState.isLocal) {
+    isHost = !isHost;
+    gameState.myColor = gameState.myColor === 1 ? 2 : 1;
+  }
+  gameState.board = initBoard();
+  gameState.turn = 1;
+  gameState.captured1 = 0;
+  gameState.captured2 = 0;
+  gameState.moveNum = 0;
+  gameState.gameOver = false;
+  gameState.selected = null;
+  gameState.validMoves = [];
+  gameState.chainPiece = null;
+  $('moveLog').innerHTML = '';
+  resetTimer();
+  startTimer();
+  showScreen('Game');
+  renderBoard();
+}
+
+// В лобби
+$('btnToLobby').addEventListener('click', () => {
+  sndClick();
+  hide('screenResult');
+  stopTimer();
+  stopPing();
+  if (conn) { conn.close(); conn = null; }
+  if (peer) peer.destroy();
+  initPeer();
+  showScreen('Lobby');
+  displayStats();
+});
+
+// ─────────────────────────────────────
+// СДАТЬСЯ
+// ─────────────────────────────────────
+$('btnResign').addEventListener('click', () => {
+  sndClick();
+  showModal('Вы уверены, что хотите сдаться?', [
+    {text:'Да, сдаюсь', action:()=>{
+      sendData({type:'resign'});
+      endGame('lose');
+      hideModal();
+    }},
+    {text:'Нет', action:hideModal}
+  ]);
+});
+
+// ─────────────────────────────────────
+// НИЧЬЯ
+// ─────────────────────────────────────
+$('btnDraw').addEventListener('click', () => {
+  sndClick();
+  sendData({type:'draw_offer'});
+  toast('Предложение ничьей отправлено');
+});
+
+// ─────────────────────────────────────
+// ПЕРЕПОДКЛЮЧЕНИЕ К СЕРВЕРУ
+// ─────────────────────────────────────
+$('btnReconnect').addEventListener('click', () => {
+  sndClick();
+  if (peer) peer.destroy();
+  initPeer();
+  toast('Переподключение...');
+});
+
+// ─────────────────────────────────────
+// ИНИЦИАЛИЗАЦИЯ
+// ─────────────────────────────────────
+$('btnCreate').disabled = true;
+$('btnJoin').disabled = true;
+initPeer();
+showScreen('Lobby');
+
+console.log('═══════════════════════════════════════════');
+console.log('  СТАРИКАМ ТУТ НЕ МЕСТО!');
+console.log('  Русские шашки — P2P Online');
+console.log('  PeerJS WebRTC');
+console.log('═══════════════════════════════════════════');
 </script>
 </body>
 </html>
