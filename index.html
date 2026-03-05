@@ -1,283 +1,248 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Альманах Химика SS14</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--dim:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--orange:#d29922;--purple:#bc8cff;--cyan:#39d2c0;--pink:#f778ba}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6;min-height:100vh}
-.header{background:linear-gradient(135deg,#0d1117 0%,#161b22 100%);border-bottom:1px solid var(--border);padding:20px 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
-.header-inner{max-width:1200px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.logo{display:flex;align-items:center;gap:12px}
-.logo svg{flex-shrink:0}
-.logo h1{font-size:1.4rem;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.logo span{font-size:.75rem;color:var(--dim);display:block;-webkit-text-fill-color:var(--dim)}
-.search-box{flex:1;min-width:250px;position:relative}
-.search-box input{width:100%;padding:10px 16px 10px 42px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;outline:none;transition:border-color .2s}
-.search-box input:focus{border-color:var(--accent)}
-.search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--dim)}
-.stats{display:flex;gap:16px;font-size:.8rem;color:var(--dim)}
-.stats span{display:flex;align-items:center;gap:4px}
-.container{max-width:1200px;margin:0 auto;padding:20px}
-.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
-.tab{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:.85rem;color:var(--dim);background:transparent;border:1px solid transparent;transition:all .2s;display:flex;align-items:center;gap:6px;user-select:none}
-.tab:hover{color:var(--text);background:var(--card)}
-.tab.active{color:var(--accent);background:rgba(88,166,255,.1);border-color:rgba(88,166,255,.3)}
-.tab .count{background:var(--border);color:var(--dim);padding:1px 7px;border-radius:10px;font-size:.7rem}
-.tab.active .count{background:rgba(88,166,255,.2);color:var(--accent)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;transition:all .2s;cursor:default}
-.card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.3)}
-.card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px}
-.card-title{font-size:1rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px}
-.card-title svg{flex-shrink:0}
-.badge{padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
-.badge-med{background:rgba(63,185,80,.15);color:var(--green)}
-.badge-tox{background:rgba(248,81,73,.15);color:var(--red)}
-.badge-util{background:rgba(210,153,34,.15);color:var(--orange)}
-.badge-narc{background:rgba(188,140,255,.15);color:var(--purple)}
-.badge-pyro{background:rgba(248,81,73,.15);color:#ff7b72}
-.badge-cryo{background:rgba(57,210,192,.15);color:var(--cyan)}
-.badge-base{background:rgba(139,148,158,.15);color:var(--dim)}
-.badge-botan{background:rgba(63,185,80,.15);color:#56d364}
-.badge-other{background:rgba(247,120,186,.15);color:var(--pink)}
-.card-desc{font-size:.8rem;color:var(--dim);margin-bottom:10px;line-height:1.5}
-.recipe{background:var(--bg);border-radius:6px;padding:10px 12px;margin-top:8px}
-.recipe-label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:flex;align-items:center;gap:4px}
-.recipe-content{font-size:.85rem;color:var(--cyan);font-family:'Cascadia Code','Fira Code',monospace;word-break:break-word}
-.recipe-content .sep{color:var(--border);margin:0 2px}
-.card-meta{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
-.meta-item{font-size:.72rem;color:var(--dim);display:flex;align-items:center;gap:4px}
-.meta-item svg{flex-shrink:0}
-.od{color:var(--red)}
-.heal{color:var(--green)}
-.dmg{color:var(--red)}
-.no-results{text-align:center;padding:60px 20px;color:var(--dim)}
-.no-results svg{margin-bottom:16px;opacity:.4}
-.no-results p{font-size:1.1rem}
-.hidden{display:none!important}
-.temp{color:var(--orange)}
-@media(max-width:600px){.grid{grid-template-columns:1fr}.header-inner{flex-direction:column;align-items:stretch}.stats{justify-content:center}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Материалы дела</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #0b111a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .card {
+            background-color: #000000;
+            width: 100%;
+            max-width: 380px;
+            border-radius: 20px;
+            padding: 20px 20px 30px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-player {
+            position: relative;
+            background: linear-gradient(135deg, #4a4a4a 0%, #1a1a1a 100%);
+            border-radius: 12px;
+            height: 200px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .play-btn {
+            width: 56px;
+            height: 56px;
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 10px 0 10px 16px;
+            border-color: transparent transparent transparent white;
+            margin-left: 4px;
+        }
+
+        .duration {
+            position: absolute;
+            right: 12px;
+            bottom: 40px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 3px 6px;
+            border-radius: 4px;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        }
+
+        .small-play-btn {
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 6px 0 6px 10px;
+            border-color: transparent transparent transparent white;
+            cursor: pointer;
+        }
+
+        .progress-slider {
+            -webkit-appearance: none;
+            flex-grow: 1;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .progress-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .progress-slider::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+
+        .title {
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .description {
+            color: #8e8e93;
+            font-size: 13px;
+            line-height: 1.4;
+            margin-bottom: 24px;
+        }
+
+        .details-box {
+            border: 1px solid #333333;
+            border-radius: 10px;
+            margin-bottom: 24px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid #333333;
+            font-size: 13px;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #8e8e93;
+        }
+
+        .detail-value {
+            color: white;
+            font-weight: 600;
+        }
+
+        .value-green {
+            color: #34c759;
+        }
+
+        .main-btn {
+            display: block;
+            background-color: #007aff;
+            color: white;
+            width: 100%;
+            padding: 16px;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .main-btn:active {
+            opacity: 0.8;
+        }
+    </style>
 </head>
 <body>
-<div class="header"><div class="header-inner">
-<div class="logo">
-<svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="16" stroke="#58a6ff" stroke-width="2"/><circle cx="18" cy="12" r="4" fill="#58a6ff" opacity=".8"/><circle cx="12" cy="22" r="3" fill="#3fb950" opacity=".8"/><circle cx="24" cy="22" r="3" fill="#f85149" opacity=".8"/><line x1="18" y1="16" x2="13" y2="20" stroke="#8b949e" stroke-width="1.5"/><line x1="18" y1="16" x2="23" y2="20" stroke="#8b949e" stroke-width="1.5"/><line x1="12" y1="22" x2="24" y2="22" stroke="#8b949e" stroke-width="1.5"/></svg>
-<div><h1>Альманах Химика SS14</h1><span>Справочник всех реагентов и рецептов</span></div>
-</div>
-<div class="search-box">
-<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.5 7a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm-.82 4.74a6 6 0 1 1 1.06-1.06l3.04 3.04a.75.75 0 1 1-1.06 1.06l-3.04-3.04Z"/></svg>
-<input type="text" id="searchInput" placeholder="Поиск по названию, рецепту, эффекту..." autocomplete="off">
-</div>
-<div class="stats">
-<span><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1.75V13.5h13.75a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1-.75-.75V1.75a.75.75 0 0 1 1.5 0Zm14.28 2.53-5.25 5.25a.75.75 0 0 1-1.06 0L7 7.06 4.28 9.78a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l3.25-3.25a.75.75 0 0 1 1.06 0L10 7.94l4.72-4.72a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042Z"/></svg><span id="totalCount">0</span> реагентов</span>
-<span><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25ZM6.5 6.5v8h7.75a.25.25 0 0 0 .25-.25V6.5Zm8-1.5V1.75a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25V5ZM5 6.5H1.5v7.75c0 .138.112.25.25.25H5Z"/></svg><span id="catCount">0</span> категорий</span>
-</div>
-</div></div>
-<div class="container">
-<div class="tabs" id="tabs"></div>
-<div class="grid" id="grid"></div>
-<div class="no-results hidden" id="noResults">
-<svg width="48" height="48" viewBox="0 0 16 16" fill="currentColor" opacity=".3"><path d="M11.5 7a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm-.82 4.74a6 6 0 1 1 1.06-1.06l3.04 3.04a.75.75 0 1 1-1.06 1.06l-3.04-3.04Z"/></svg>
-<p>Ничего не найдено</p>
-</div>
-</div>
-<script>
-const DB=[
-{cat:"Медицина",badge:"med",items:[
-{n:"Бикаридин",e:"Лечит 5 Brute за единицу. Передозировка >30u.",r:"Углерод [1] + Инапровалин [1]",od:"30u",heal:"5 Brute/u",note:"Базовое лекарство от механических повреждений"},
-{n:"Дермалин",e:"Лечит 6 Burn за единицу. Передозировка при >30u наносит 2 Asphyxiation.",r:"Келотан [1] + Кислород [1] + Фосфор [1]",od:"30u",heal:"6 Burn/u",note:"Улучшенное ожоговое"},
-{n:"Келотан",e:"Лечит 2 Burn за единицу. Базовое ожоговое.",r:"Кремний [1] + Углерод [1]",od:"нет",heal:"2 Burn/u",note:"Базовое лекарство от ожогов"},
-{n:"Диловен",e:"Антитоксин широкого спектра. Лечит 2 Toxin за единицу. Передозировка вызывает рвоту и головокружение.",r:"Кремний [1] + Калий [1] + Азот [1]",od:"30u",heal:"2 Toxin/u",note:"Основной антидот"},
-{n:"Инапровалин",e:"Синаптический и кардиостимулятор. Снижает урон от удушья в крите, уменьшает кровотечение.",r:"Кислород [1] + Углерод [1] + Сахар [1]",od:"нет",heal:"Стабилизация",note:"Ключевой компонент многих лекарств"},
-{n:"Трикордразин",e:"Универсальное лекарство. Лечит Brute, Burn, Toxin, Airloss понемногу. Безопасен.",r:"Диловен [1] + Инапровалин [1]",od:"нет",heal:"Все типы урона",note:"Порядок важен: сначала Инапровалин, потом Диловен"},
-{n:"Дексалин",e:"Лечит незначительный урон от удушья и кровопотери.",r:"Кислород [1] + Плазма [1]",od:"нет",heal:"Airloss",note:"Плазма — катализатор, не расходуется"},
-{n:"Дексалин Плюс",e:"Продвинутое лечение кислородного голодания. Выводит Heartbreaker Toxin.",r:"Дексалин [1] + Углерод [1] + Железо [1]",od:"нет",heal:"Airloss++",note:"Улучшенная версия Дексалина"},
-{n:"Эпинефрин",e:"Стабилизирует в крите, снижает стан, выводит Heartbreaker Toxin. Может добавить гистамин.",r:"Кислород [1] + Водород [1] + Ацетон [1] + Диэтиламин [1] + Фенол [1] + Хлор [1] + Нагрев >310K",od:"30u",heal:"Стабилизация в крите",note:"Содержится в экстренных медипенах. Lingzhi при помоле даёт эпинефрин"},
-{n:"Аритразин",e:"Лечит 6 Radiation, наносит ~1 Brute (0.33 удар+порез+укол).",r:"Хироналин [1] + Водород [1]",od:"нет",heal:"6 Rad/u",dmg:"~1 Brute/u",note:"Агрессивное анти-рад средство"},
-{n:"Хироналин",e:"Слабый антирад. Лечит 2 Radiation за единицу.",r:"Диловен [1] + Радий [1]",od:"30u",heal:"2 Rad/u",note:"Базовый антирад"},
-{n:"Бруизин",e:"Лечит тупой (Blunt) урон.",r:"Бикаридин [1] + Сахар [1] + Литий [1]",od:"нет",heal:"Blunt",note:"Специализированный препарат"},
-{n:"Сидерлак",e:"Лечит 10 Caustic (кислотный) урон за единицу.",r:"Стеллибинин [1] + Алоэ [1]",od:"нет",heal:"10 Caustic/u",note:"Требует ботанические компоненты"},
-{n:"Стеллибинин",e:"Антитоксин из растений. Безопасен.",r:"Помол Galaxy Thistle (Галактический чертополох)",od:"нет",heal:"Poison (растительный)",note:"Получается только из ботаники"},
-{n:"Транексам��вая кислота",e:"Уменьшает кровотечение. Метаболизм 0.5u/с.",r:"Серная кислота [1] + Сахар [1] + Инапровалин [1]",od:"нет",heal:"Антикровотечение",note:"Критически важна при сильном кровотечении"},
-{n:"Дипенгидрамин",e:"Быстро выводит гистамин, снижает дрожь, вызывает сонливость, лечит Toxin.",r:"Масло [1] + Углерод [1] + Бром [1] + Диэтиламин [1] + Этанол [1]",od:"60u",heal:"Антигистамин",note:"Применяется при аллергии и укусах пчёл"},
-{n:"Эфедрин",e:"Стимулятор: бодрит, снижает стан, ускоряет.",r:"Масло [1] + Водород [1] + Сахар [1] + Диэтиламин [1]",od:"30u",heal:"Антистан",note:"Нестабильный. Получается из Масла"},
-{n:"Лепоразин",e:"Стабилизирует температуру тела.",r:"Плазма [1] + Кремний [1] + Медь [1]",od:"нет",heal:"Терморегуляция",note:"Защищает от жары и холода"},
-{n:"Фалангимин",e:"Лечит 4 клеточного урона, наносит 2 Radiation.",r:"Нестабильный мутаген [1] + Хироналин [1] + Этанол [1]",od:"нет",heal:"4 Cellular/u",dmg:"2 Rad/u",note:"Единственное лекарство от клеточного урона (кроме крио)"},
-{n:"Ипекак",e:"Вызывает рвоту. Удаляет яды из организма.",r:"Диловен [1] + Аммиак [1]",od:"нет",heal:"Очищение организма",note:"Полезен при отравлении"},
-{n:"Пакс",e:"Подавляет агрессию. Не даёт атаковать.",r:"Диловен [1] + Аммиак [1] + Сахар [1] + Нагрев >310K",od:"нет",heal:"Пацификация",note:"Используется СБ для усмирения"},
-{n:"Саллен",e:"Лечит ушибы и порезы, оставляя минимальный ожог.",r:"Бикаридин [1] + Углерод [1] + Хлор [1]",od:"25u",heal:"Brute продвинутый",note:"Продвинутый anti-brute"},
-{n:"Сигинат",e:"Газированный реагент. Лечит проколы (Pierce).",r:"Бикаридин [1] + Углерод [2] + Нагрев >310K",od:"30u",heal:"Pierce",note:"Специализация по проколам"},
-{n:"Опаловерин",e:"Эффективно лечит ожоги от огня.",r:"Дермалин [1] + Углерод [1] + Водород [1] + Нагрев >310K",od:"25u",heal:"Burns++",note:"Очень сильное ожоговое"},
-]},
-{cat:"Крио-медицина",badge:"cryo",items:[
-{n:"Криоксадон",e:"Лечит все стандартные типы урона при температуре ниже 213К. Используется в криокамерах.",r:"Ацетон [1] + Диловен [1] + Нестабильный мутаген [1]",od:"нет",heal:"Все типы урона (при <213К)",note:"Основа криогенной медицины"},
-{n:"Доксарубиксадон",e:"Лечит клеточный урон при температуре ниже 213К.",r:"Криоксадон [1] + Нестабильный мутаген [1]",od:"нет",heal:"4 Cellular (<213К)",note:"Крио-лечение клеточных повреждений"},
-{n:"Биокардин",e:"Криогенное вещество. Лечит тяжёлые ожоги при <213К. Работает на живых и мёртвых.",r:"Криоксадон [1] + Дермалин [1]",od:"нет",heal:"6 Burn, 6 Shock, 2 Caustic (<213К)",note:"Мощнейшее крио-ожоговое средство"},
-{n:"Полидексалин",e:"Криогенное средство от удушья. Работает при <213К.",r:"Криоксадон [1] + Дексалин Плюс [1]",od:"нет",heal:"Airloss (<213К)",note:"Крио-лечение кислородного голодания"},
-]},
-{cat:"Нагреваемые",badge:"med",items:[
-{n:"Ацетон",e:"Промежуточный реагент для многих рецептов.",r:"Масло [1] + Welding Fuel [1] + Кислород [1] + Нагрев >310K",od:"—",heal:"—",note:"Не лекарство, но нужен для многих рецептов"},
-{n:"Масло (Oil)",e:"Промежуточный реагент.",r:"Углерод [1] + Водород [1] + Welding Fuel [1] + Нагрев >310K",od:"—",heal:"—",note:"Базовый промежуточный компонент"},
-{n:"Фенол",e:"Промежуточный реагент. Ароматическое кольцо углерода с гидроксилом.",r:"Вода [1] + Хлор [1] + Масло [1] + Нагрев >310K",od:"—",heal:"—",note:"Прекурсор многих лекарств"},
-{n:"Диэтиламин",e:"Промежуточный реагент для продвинутых лекарств.",r:"Аммиак [1] + Этанол [1] + Нагрев >310K",od:"—",heal:"—",note:"Компонент эфедрина и дипенгидрамина"},
-]},
-{cat:"Промежуточные",badge:"base",items:[
-{n:"Аммиак",e:"Промежуточный реагент. Часть рецепта Space Cleaner.",r:"Водород [3] + Азот [1]",od:"—",heal:"—",note:"Важный базовый компонент"},
-{n:"Серная кислота",e:"Токсичная кислота. Используется в рецептах.",r:"Водород [1] + Кислород [2] + Сера [1]",od:"—",heal:"—",note:"Прекурсор ряда лекарств"},
-{n:"Столовая соль",e:"Хлорид натрия. Нужна для рецептов.",r:"Хлор [1] + Натрий [1] + Нагрев >370K",od:"—",heal:"—",note:"Нагреть выше 370К для реакции"},
-{n:"Нестабильный мутаген",e:"Мутирует растения и существ. Радиоактивен.",r:"Хлор [1] + Фосфор [1] + Радий [1]",od:"—",heal:"—",note:"Ботаники просят каждую смену"},
-{n:"Этанол",e:"Спирт. Базовый компонент многих рецептов.",r:"Доступен в раздатчике",od:"—",heal:"—",note:"Также получается из растений"},
-]},
-{cat:"Токсины и яды",badge:"tox",items:[
-{n:"Хлоралгидрат",e:"Снотворное и седативное. Усыпляет жертву.",r:"Хлор [3] + Этанол [1] + Вода [1]",od:"—",dmg:"Усыпление",note:"Опасен при передозировке"},
-{n:"Токсин",e:"Наносит прямой урон Toxin.",r:"Доступен через раздатчик или плазму",od:"—",dmg:"Toxin",note:"Базовый яд"},
-{n:"Гистамин",e:"Аллергическая реакция. Дрожь, урон. Лечится дипенгидрамином.",r:"Побочный продукт (не синтезируется напрямую)",od:"—",dmg:"Аллергия",note:"Выводится Дипенгидрамином и Эпинефрином"},
-{n:"Аматоксин",e:"Смертельный грибной токсин. Малые дозы летальны.",r:"Помол мухомора (Fly Amanita)",od:"—",dmg:"Lethal Toxin",note:"Из грибов, не синтезируется"},
-{n:"Карпотоксин",e:"Токсин космических карпов. Вызывает жжение.",r:"Из космических карпов (помол)",od:"—",dmg:"Burn + Toxin",note:"Получается от утилизаторов"},
-{n:"Nocturine",e:"Мощное снотворное. Мгновенно усыпляет.",r:"Не синтезируется (трейторский предмет)",od:"—",dmg:"Deep Sleep",note:"Содержится в Sleepy Pen антагонистов"},
-{n:"Heartbreaker Toxin",e:"Яд, выводимый Дексалином+ и Эпинефрином.",r:"Побочный продукт",od:"—",dmg:"Toxin",note:"Выводится Дексалином+ и Эпинефрином"},
-{n:"Mute Toxin",e:"Лишает способности говорить.",r:"Не синтезируется (спец. источники)",od:"—",dmg:"Немота",note:"Антагонистский яд"},
-{n:"Impedrezene",e:"Урон мозгу, замедление реакции.",r:"Кислород [1] + Ртуть [1] + Сахар [1]",od:"—",dmg:"Brain damage",note:"Опасный нейротоксин"},
-{n:"Тетрагидроканнабинол (THC)",e:"Вызывает голод и эйфорию. Слабый наркотик из растений.",r:"Помол конопли",od:"—",dmg:"Голод",note:"Из ботаники"},
-]},
-{cat:"Наркотики",badge:"narc",items:[
-{n:"Космические наркотики (Space Drugs)",e:"Вызывают галлюцинации и головокружение.",r:"Литий [1] + Ртуть [1] + Сахар [1]",od:"нет",dmg:"Hallucinations",note:"Сброс псионики"},
-{n:"Mindbreaker",e:"Сильнее Space Drugs. Мощные галлюцинации.",r:"Диловен [1] + Кремний [1] + Водород [1]",od:"нет",dmg:"Strong Hallucinations",note:"Можно упростить: Si×2 + N + K + H"},
-{n:"Метамфетамин",e:"Мощный стимулятор. Снижает стан, ускоряет. Крайне аддиктивен.",r:"Эфедрин [1] + Водород [1] + Йод [1] + Фосфор [1] + Нагрев >310K",od:"20u",dmg:"Brain + Toxin при OD",note:"Опасная передозировка!"},
-{n:"Ковриний (Carpotoxin+)",e:"Покрывает ковром всё, на что попадёт.",r:"Космические наркотики [1] + Ткань [2]",od:"нет",dmg:"—",note:"Комедийный реагент с планеты клоунов"},
-]},
-{cat:"Пиротехника",badge:"pyro",items:[
-{n:"Welding Fuel",e:"Топливо для сварки. Горючее.",r:"Из топливных баков",od:"—",dmg:"Toxin при приёме",note:"Используется как компонент"},
-{n:"Napalm",e:"Горючая субстанция. Поджигает.",r:"Масло [1] + Welding Fuel [1] + Этанол [1]",od:"—",dmg:"Fire",note:"Не синтезировать в лаборатории!"},
-{n:"ClF3 (Трифторид хлора)",e:"Экстремально горючий и взрывоопасный. Поджигает всё.",r:"Хлор [1] + Фтор [3] + Нагрев >310K",od:"—",dmg:"Extreme Fire",note:"Бомба. Нагреть хлор отдельно, затем смешать"},
-{n:"Thermite",e:"Прожигает стены при поджоге.",r:"Железо [1] + Алюминий [1] + Кислород [1]",od:"—",dmg:"Плавит стены",note:"Нанести на стену, поджечь"},
-{n:"Smoke Powder",e:"Создаёт дымовую завесу.",r:"Калий [1] + Сахар [1] + Фосфор [1]",od:"—",dmg:"—",note:"При смешивании с водой создаёт дым"},
-{n:"Flash Powder",e:"Ослепляющая вспышка.",r:"Алюминий [1] + Калий [1] + Сера [1]",od:"—",dmg:"Flash",note:"Осторожно при смешивании"},
-{n:"Phlogiston",e:"Загорается от контакта с воздухом.",r:"Фосфор [1] + Серная кислота [1] + Нестабильный мутаген [1]",od:"—",dmg:"Self-ignite",note:"Крайне опасен"},
-{n:"Foam",e:"Создаёт пену, распространяющую реагенты.",r:"Фтор [1] + Водород [1]",od:"—",dmg:"—",note:"Смешать с другими реагентами для распространения"},
-{n:"EMP (Электромагнитный импульс)",e:"Выключает электронику.",r:"Железо [1] + Уран [1]",od:"—",dmg:"EMP",note:"Отключает КПК, комм-устройства, борги"},
-]},
-{cat:"Утилитарные",badge:"util",items:[
-{n:"Space Cleaner (Космический очиститель)",e:"Очищает любую поверхность от загрязнений.",r:"Аммиак [1] + Вода [1]",od:"—",heal:"—",note:"Основной инструмент уборщика"},
-{n:"Космическая смазка (Space Lube)",e:"Делает пол скользким.",r:"Вода [1] + Кремний [1] + Кислород [1]",od:"—",dmg:"Скольжение",note:"Любимый реагент клоунов"},
-{n:"Отбеливатель (Bleach)",e:"Сверхмощный очиститель. Токсичен при приёме.",r:"Кислород [1] + Space Cleaner [2] + Столовая соль [2]",od:"—",dmg:"Toxin при приёме",note:"Обеззараживает одежду"},
-{n:"Robust Harvest",e:"Увеличивает размер и силу растений.",r:"Нестабильный мутаген [1] + Вода [3]",od:"—",heal:"Растения",note:"Ключевой реагент для ботаники"},
-{n:"Plant-B-Gone",e:"Гербицид. Убивает растения и сорняки.",r:"Токсин [1] + Вода [4]",od:"—",dmg:"Убивает растения",note:"Для борьбы с сорняками"},
-{n:"Pesticide (EZ-Nutrient)",e:"Питание для растений.",r:"Доступен в ботанике",od:"—",heal:"Растения",note:"Базовое удобрение"},
-{n:"Rat Poison (Крысиный яд)",e:"Убивает крыс.",r:"Токсин [4] + Сахар [1]",od:"—",dmg:"Убивает крыс",note:"Заказ от уборщика"},
-{n:"Lexorin",e:"Парализует дыхательную систему.",r:"Водород [1] + Плазма [1] + Азот [1]",od:"—",dmg:"Asphyxiation",note:"Боевой реагент"},
-{n:"Cognizine",e:"Делает любое неразумное существо разумным.",r:"Не синтезируется стандартно",od:"—",heal:"Разумность",note:"Загадочный реагент"},
-]},
-{cat:"Ботанические",badge:"botan",items:[
-{n:"Алоэ крем (Aloe Cream)",e:"Лечит ожоги при нанесении. Не химическое средство.",r:"Из алоэ вера (помол растений)",od:"—",heal:"Burns (наружно)",note:"Запросить у ботаников"},
-{n:"Линчжи (Lingzhi)",e:"При помоле даёт Эпинефрин.",r:"Помол гриба Линчжи",od:"—",heal:"→ Эпинефрин",note:"Один из самых полезных грибов"},
-{n:"Мак (Poppy)",e:"При съедении лечит немного Brute. При помоле — Бикаридин.",r:"Помол мака",od:"—",heal:"Brute (сырой) / Бикаридин (молотый)",note:"Более эффективен при помоле"},
-{n:"Galaxy Thistle",e:"При помоле даёт Стеллибинин.",r:"Помол галактического чертополоха",od:"—",heal:"→ Стеллибинин",note:"Нужен для Сидерлака"},
-{n:"Алоэ вера",e:"При помоле даёт Алоэ крем.",r:"Помол алоэ",od:"—",heal:"→ Алоэ крем",note:"Основное растение для медицины"},
-]},
-{cat:"Зомби-апокалипсис",badge:"other",items:[
-{n:"Ambuzol",e:"Высокотехнологичный препарат. Останавливает развитие зомби-вируса.",r:"Диловен [1] + Криоксадон [2] + Нагрев >310K",od:"—",heal:"Анти-зомби",note:"Требуется ≥10u для исцеления от вируса"},
-{n:"Ambuzol Plus",e:"Прививка от зомби-вируса для живых.",r:"Ambuzol [1] + Кровь заражённого [1]",od:"—",heal:"Вакцина",note:"Иммунизирует от заражения"},
-]},
-{cat:"Особые",badge:"other",items:[
-{n:"Multiver",e:"Удаляет яды, наркотики, лекарства из организма каждый тик.",r:"Уголь [1] + Столовая соль [1] + Охлаждение <320K",od:"—",heal:"Универсальный антидот",note:"Нужно ≥3 реагента в теле (включая Multiver). Уголь: Углерод + Пепел"},
-{n:"Syriniver",e:"Быстро лечит Toxin за счёт Brute. Создаёт Musiver.",r:"Диловен [1] + Фтор [1] + Серная кислота [1]",od:"6u",heal:"25 Toxin за 5u",dmg:"Brute побочно",note:"Передозировка очень опасна"},
-{n:"Уголь (Charcoal)",e:"Промежуточный для Multiver. Поглощает яды.",r:"Углерод [1] + Пепел [1] (Ash — из крематория или жжёной бумаги)",od:"нет",heal:"Абсорбент ядов",note:"Пепел: ЛКМ по мензурке с пеплом"},
-{n:"Calomel",e:"Быстро выводит токсины при температуре тела >47°C.",r:"Ртуть [1] + Литий [1] + Нагрев >370K",od:"—",heal:"Agressive detox",note:"Вещество с сервера Goob Station"},
-{n:"Saline (Физраствор)",e:"Восстанавливает кровь, уменьшает кровотечение.",r:"Вода [80] + Столовая соль [20]",od:"—",heal:"Кровопотеря",note:"Крупная партия: 80 воды + 20 соли"},
-{n:"Hyronalin+",e:"Снижает урон от радиации на 90%. Только профилактика.",r:"Хироналин [1] + Диловен [1] + Нагрев >310K",od:"нет",heal:"Антирад -90%",note:"Использовать ДО облучения"},
-{n:"Ultravasculine",e:"Лечит Asphyxiation и Brute, останавливает кровотечение. Замедляет.",r:"Инапровалин [2] + Железо [1] + Медь [1] + Нагрев >310K",od:"нет",heal:"Brute + Asphyx + кровотечение",note:"Пурпурная жидкость, побочка — замедление"},
-{n:"Bicaridine Plus (Saline-enhanced)",e:"Продвинутое лечение крови с транексамовой кислотой.",r:"Saline [100] + Транексамовая кислота [10] + Железо [5] + Медь [5] + Нагрев >310K",od:"—",heal:"Кровь + Anti-bleed",note:"Комплексный рецепт"},
-]},
-{cat:"Элементы (Раздатчик)",badge:"base",items:[
-{n:"Алюминий (Al)",e:"Серебристый, мягкий, немагнитный, ковкий металл.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для термита, Flash Powder"},
-{n:"Углерод (C)",e:"Чёрное кристаллическое твёрдое вещество.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Один из самых используемых"},
-{n:"Хлор (Cl)",e:"Жёлто-зелёный токсичный газ.",r:"Раздатчик химикатов",od:"—",dmg:"Toxin при приёме",note:"Для солей, ClF3"},
-{n:"Медь (Cu)",e:"Мягкий, ковкий металл с высокой электропроводностью.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для Лепоразина"},
-{n:"Фтор (F)",e:"Высокотоксичный бледно-жёлтый газ. Крайне реактивен.",r:"Раздатчик химикатов",od:"—",dmg:"Toxin + Burn",note:"Для ClF3, Foam"},
-{n:"Водород (H)",e:"Лёгкий горючий газ.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Универсальный компонент"},
-{n:"Йод (I)",e:"Добавка к столовой соли как питательное вещество.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для метамфетамина"},
-{n:"Железо (Fe)",e:"Помогает медленно восстанавливать кровь.",r:"Раздатчик химикатов",od:"—",heal:"0.8 крови/цикл",note:"Полезно при кровопотере"},
-{n:"Литий (Li)",e:"Мягкий серебристо-белый металл. Вызывает подёргивания.",r:"Раздатчик химикатов",od:"—",dmg:"Twitching",note:"Для Space Drugs, Бруизина"},
-{n:"Ртуть (Hg)",e:"Жидкий металл. 70% шанс урона мозгу.",r:"Раздатчик химикатов",od:"—",dmg:"Brain damage",note:"Для Space Drugs, Impedrezene"},
-{n:"Азот (N)",e:"Бесцветный газ.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для Диловена, Аммиака"},
-{n:"Кислород (O)",e:"Бесцветный газ, необходимый для дыхания.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Универсальный компонент"},
-{n:"Фосфор (P)",e:"Реактивный металл для пиротехники.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для Дермалина, дыма"},
-{n:"Калий (K)",e:"Мягкий серый блестящий металл. Реактивнее лития.",r:"Раздатчик химикатов",od:"—",dmg:"Взрыв с водой!",note:"НЕ смешивать с водой!"},
-{n:"Радий (Ra)",e:"Радиоактивный светящийся металл. Высокотоксичен.",r:"Раздатчик химикатов",od:"—",dmg:"4 Radiation",note:"Для мутагена, Хироналина"},
-{n:"Кремний (Si)",e:"Твёрдое кристаллическое вещество с голубовато-серым цветом.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для Келотана, Диловена, Смазки"},
-{n:"Серебро (Ag)",e:"Мягкий белый блестящий переходный металл.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Редко используется в рецептах"},
-{n:"Натрий (Na)",e:"Серебристо-белый щелочной металл. Высокореактивен.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для столовой соли"},
-{n:"Сера (S)",e:"Жёлтое кристаллическое вещество.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для серной кислоты, Flash Powder"},
-{n:"Плазма",e:"Наносит 1 Toxin. Катализатор (не расходуется в реакциях).",r:"Утилизаторы / деконструкция / карго",od:"—",dmg:"1 Toxin/u",note:"Нужно отделять после реакции!"},
-{n:"Сахар",e:"Даёт питание. Редкий шанс распада в эпинефрин.",r:"Раздатчик химикатов",od:"200u",heal:"Питание",note:"Передозировка — диабетический шок"},
-{n:"Вода",e:"Универсальный растворитель.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Основа многих рецептов"},
-{n:"Этанол",e:"Спирт. Вызывает опьянение.",r:"Раздатчик химикатов",od:"—",dmg:"Опьянение",note:"Компонент многих рецептов"},
-{n:"Бром (Br)",e:"Красно-коричневая жидкость.",r:"Раздатчик химикатов",od:"—",heal:"—",note:"Для Дипенгидрамина"},
-{n:"Уран (U)",e:"Серый металлический элемент. Слаборадиоактивен.",r:"Помол урановой руды (шахтёры)",od:"—",dmg:"2 Radiation",note:"Для EMP"},
-]},
-];
-const svgIcons={
-med:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#3fb950"><path d="M6.5 1h3a1 1 0 0 1 1 1v3h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-3v3a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-3h-3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h3V2a1 1 0 0 1 1-1Z"/></svg>',
-tox:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#f85149"><path d="M8 1a1 1 0 0 1 .867.5l6.928 12A1 1 0 0 1 14.928 15H1.072a1 1 0 0 1-.867-1.5l6.928-12A1 1 0 0 1 8 1Zm0 3.5a.75.75 0 0 0-.75.75v4a.75.75 0 0 0 1.5 0v-4A.75.75 0 0 0 8 4.5ZM8 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg>',
-util:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#d29922"><path d="M7.429.87a.5.5 0 0 1 .713.13L9.07 2.307a.5.5 0 0 1-.128.664L8 3.594V5h3a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1.5V3.594l-.942-.623a.5.5 0 0 1-.128-.664L6.716 1a.5.5 0 0 1 .713-.13Z"/></svg>',
-narc:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#bc8cff"><circle cx="8" cy="8" r="7" stroke="#bc8cff" stroke-width="1.5" fill="none"/><path d="M5 8h6M8 5v6" stroke="#bc8cff" stroke-width="1.5" stroke-linecap="round"/></svg>',
-pyro:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#ff7b72"><path d="M8 1c.5 2 3 4 3 7a4 4 0 0 1-3 3.86A4 4 0 0 1 5 8c0-1.5.5-2.5 1-3.5S7.5 2 8 1Z"/></svg>',
-cryo:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#39d2c0"><path d="M8 1v14M3 4l5 4-5 4M13 4L8 8l5 4" stroke="#39d2c0" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-base:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#8b949e"><circle cx="8" cy="8" r="3" stroke="#8b949e" stroke-width="1.5" fill="none"/><circle cx="8" cy="2" r="1.5" fill="#8b949e"/><circle cx="8" cy="14" r="1.5" fill="#8b949e"/><circle cx="2" cy="8" r="1.5" fill="#8b949e"/><circle cx="14" cy="8" r="1.5" fill="#8b949e"/></svg>',
-botan:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#56d364"><path d="M8 14V6M5 3c0 2 1 3 3 4 2-1 3-2 3-4-1.5 0-2.5 1-3 2-.5-1-1.5-2-3-2ZM5 8c0 2 1 3 3 4 2-1 3-2 3-4-1.5 0-2.5 1-3 2-.5-1-1.5-2-3-2Z"/></svg>',
-other:'<svg width="16" height="16" viewBox="0 0 16 16" fill="#f778ba"><path d="M8 1l2 4h4l-3 3 1 5-4-2-4 2 1-5-3-3h4Z"/></svg>'
-};
-let activeTab="all";
-function renderTabs(){
-const t=document.getElementById("tabs");
-let total=0;
-DB.forEach(c=>total+=c.items.length);
-let h=`<div class="tab active" data-cat="all">Все <span class="count">${total}</span></div>`;
-DB.forEach(c=>{h+=`<div class="tab" data-cat="${c.cat}">${svgIcons[c.badge]||""} ${c.cat} <span class="count">${c.items.length}</span></div>`});
-t.innerHTML=h;
-document.getElementById("totalCount").textContent=total;
-document.getElementById("catCount").textContent=DB.length;
-t.querySelectorAll(".tab").forEach(tab=>{
-tab.addEventListener("click",()=>{
-t.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-tab.classList.add("active");
-activeTab=tab.dataset.cat;
-renderCards();
-})
-})
-}
-function renderCards(){
-const q=document.getElementById("searchInput").value.toLowerCase().trim();
-const g=document.getElementById("grid");
-const nr=document.getElementById("noResults");
-let html="";
-let count=0;
-DB.forEach(cat=>{
-if(activeTab!=="all"&&cat.cat!==activeTab)return;
-cat.items.forEach(item=>{
-const searchStr=(item.n+" "+item.e+" "+item.r+" "+(item.note||"")).toLowerCase();
-if(q&&!searchStr.includes(q))return;
-count++;
-const icon=svgIcons[cat.badge]||svgIcons.base;
-const badgeCls="badge-"+cat.badge;
-let meta="";
-if(item.heal&&item.heal!=="—")meta+=`<div class="meta-item heal"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M6.5 3h3v3h3v3h-3v3h-3V9h-3V6h3Z"/></svg>${item.heal}</div>`;
-if(item.dmg)meta+=`<div class="meta-item dmg"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a1 1 0 0 1 .867.5l6 10.5A1 1 0 0 1 14 13.5H2a1 1 0 0 1-.867-1.5l6-10.5A1 1 0 0 1 8 1Z"/></svg>${item.dmg}</div>`;
-if(item.od&&item.od!=="—"&&item.od!=="нет")meta+=`<div class="meta-item od"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>OD: ${item.od}</div>`;
-html+=`<div class="card"><div class="card-head"><div class="card-title">${icon} ${item.n}</div><div class="badge ${badgeCls}">${cat.cat}</div></div><div class="card-desc">${item.e}</div><div class="recipe"><div class="recipe-label"><svg width="12" height="12" viewBox="0 0 16 16" fill="#8b949e"><path d="M5.5 3.5v2.268a1 1 0 0 1-.293.707L2.5 9.182V12.5h11V9.182l-2.707-2.707a1 1 0 0 1-.293-.707V3.5h-5ZM4 2h8a1 1 0 0 1 1 1v2.768l2.354 2.354A1.5 1.5 0 0 1 15.793 9H16v5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14V9h.207a1.5 1.5 0 0 1 .44-.878L3 5.768V3a1 1 0 0 1 1-1Z"/></svg>Рецепт</div><div class="recipe-content">${item.r}</div></div>${item.note?`<div class="card-desc" style="margin-top:8px;font-style:italic;font-size:.75rem">💡 ${item.note}</div>`:""}<div class="card-meta">${meta}</div></div>`
-})
-});
-g.innerHTML=html;
-if(count===0){nr.classList.remove("hidden")}else{nr.classList.add("hidden")}
-}
-document.getElementById("searchInput").addEventListener("input",renderCards);
-renderTabs();
-renderCards();
-</script>
+
+    <div class="card">
+        <div class="video-player">
+            <div class="play-btn" id="playBtn">
+                <div class="play-icon"></div>
+            </div>
+            <div class="duration">0:48</div>
+            <div class="controls">
+                <div class="small-play-btn" id="smallPlayBtn"></div>
+                <input type="range" class="progress-slider" id="progressSlider" min="0" max="100" value="0">
+            </div>
+        </div>
+
+        <h1 class="title">Материалы дела</h1>
+        <p class="description">Доступ к протоколу №4829-Б и видеозаписи системы ГЛОНАСС/GPS ограничен политикой безопасности.</p>
+
+        <div class="details-box">
+            <div class="detail-row">
+                <span class="detail-label">Дата события:</span>
+                <span class="detail-value">Сегодня</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Статус:</span>
+                <span class="detail-value value-green">Проверено ГИБДД</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Формат:</span>
+                <span class="detail-value">Full HD (MP4)</span>
+            </div>
+        </div>
+
+        <a href="#" id="officialLink" class="main-btn">Открыть официальный плеер</a>
+    </div>
+
+    <script>
+        const linkUrl = "https://google.com/";
+        
+        document.getElementById('officialLink').href = linkUrl;
+
+        const playBtn = document.getElementById('playBtn');
+        const smallPlayBtn = document.getElementById('smallPlayBtn');
+        const slider = document.getElementById('progressSlider');
+
+        const showPlayerAlert = () => {
+            alert('Воспроизведение доступно только через официальный плеер! Установите его, нажав кнопку ниже.');
+        };
+
+        playBtn.addEventListener('click', showPlayerAlert);
+        smallPlayBtn.addEventListener('click', showPlayerAlert);
+
+        slider.addEventListener('input', function() {
+            const value = this.value;
+            this.style.background = `linear-gradient(to right, #ff0000 0%, #ff0000 ${value}%, rgba(255, 255, 255, 0.3) ${value}%, rgba(255, 255, 255, 0.3) 100%)`;
+        });
+    </script>
 </body>
 </html>
