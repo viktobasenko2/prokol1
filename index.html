@@ -3,248 +3,343 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Материалы дела</title>
+    <title>Private Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-color: #0c0508;
+            --accent-pink: #f92f60;
+            --text-main: #ffffff;
+            --text-muted: #8e8e93;
+            --card-bg: #140d11;
+            --badge-bg: rgba(255, 255, 255, 0.1);
+        }
+
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
         }
 
         body {
-            background-color: #f2f2f7; /* Светло-серый фон страницы */
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 0%, #310d1c 0%, #0c0508 60%);
+            color: var(--text-main);
             display: flex;
             justify-content: center;
-            align-items: center;
             min-height: 100vh;
+            padding: 20px;
         }
 
-        .card {
-            background-color: #ffffff; /* Белый фон карточки */
+        .app-container {
             width: 100%;
-            max-width: 380px;
-            border-radius: 20px;
-            padding: 20px 20px 30px 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Мягкая тень */
-        }
-
-        /* Видеоплеер остается темным, так как экраны видео всегда черные */
-        .video-player {
-            position: relative;
-            background: linear-gradient(135deg, #4a4a4a 0%, #1a1a1a 100%);
-            border-radius: 12px;
-            height: 200px;
-            margin-bottom: 24px;
+            max-width: 400px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
+            gap: 20px;
         }
 
-        .play-btn {
-            width: 56px;
-            height: 56px;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 5px;
+        }
+
+        .logo {
+            color: var(--accent-pink);
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--accent-pink);
+            background-color: rgba(249, 47, 96, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent-pink);
+            letter-spacing: 0.5px;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--accent-pink);
+            border-radius: 50%;
+        }
+
+        .video-card {
+            background: linear-gradient(180deg, #bb8875 0%, #4a2524 60%, #1a0b12 100%);
+            border-radius: 20px;
+            position: relative;
+            height: 480px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .top-badges {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .online-badge {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 6px 12px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .age-badge {
+            background-color: var(--accent-pink);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .play-button-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            background-color: rgba(0, 0, 0, 0.4);
             border: 2px solid white;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(2px);
         }
 
-        .play-icon {
-            width: 0;
-            height: 0;
-            border-style: solid;
-            border-width: 10px 0 10px 16px;
-            border-color: transparent transparent transparent white;
+        .play-button-center svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
             margin-left: 4px;
         }
 
-        .duration {
+        .video-controls {
             position: absolute;
-            right: 12px;
-            bottom: 40px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            font-size: 11px;
-            font-weight: 500;
-            padding: 3px 6px;
-            border-radius: 4px;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
         }
 
-        .controls {
+        .progress-bar {
+            height: 3px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .progress-filled {
             position: absolute;
-            bottom: 0;
+            top: 0;
             left: 0;
-            width: 100%;
-            padding: 12px;
+            height: 100%;
+            width: 20%;
+            background-color: var(--accent-pink);
+            border-radius: 2px;
+        }
+
+        .time-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .user-section {
             display: flex;
             align-items: center;
             gap: 12px;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 0 5px;
         }
 
-        .small-play-btn {
-            width: 0;
-            height: 0;
-            border-style: solid;
-            border-width: 6px 0 6px 10px;
-            border-color: transparent transparent transparent white;
-            cursor: pointer;
-        }
-
-        .progress-slider {
-            -webkit-appearance: none;
-            flex-grow: 1;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 2px;
-            outline: none;
-            cursor: pointer;
-        }
-
-        .progress-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 12px;
-            height: 12px;
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #f68da6;
             border-radius: 50%;
-            background: transparent;
-            cursor: pointer;
-        }
-
-        .progress-slider::-moz-range-thumb {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-        }
-
-        .title {
-            color: #000000; /* Черный заголовок */
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .description {
-            color: #6c6c70; /* Темно-серый текст */
-            font-size: 13px;
-            line-height: 1.4;
-            margin-bottom: 24px;
-        }
-
-        .details-box {
-            border: 1px solid #e5e5ea; /* Светлая рамка */
-            border-radius: 10px;
-            margin-bottom: 24px;
-        }
-
-        .detail-row {
             display: flex;
-            justify-content: space-between;
-            padding: 14px 16px;
-            border-bottom: 1px solid #e5e5ea; /* Светлая рамка-разделитель */
-            font-size: 13px;
-        }
-
-        .detail-row:last-child {
-            border-bottom: none;
-        }
-
-        .detail-label {
-            color: #6c6c70; /* Темно-серый цвет меток */
-        }
-
-        .detail-value {
-            color: #000000; /* Черный цвет значений */
-            font-weight: 600;
-        }
-
-        .value-green {
-            color: #34c759; /* Зеленый цвет остается */
-        }
-
-        .main-btn {
-            display: block;
-            background-color: #007aff;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 700;
             color: white;
-            width: 100%;
-            padding: 16px;
-            text-decoration: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            text-align: center;
         }
 
-        .main-btn:active {
-            opacity: 0.8;
+        .user-details .name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .user-details .meta {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .tags {
+            display: flex;
+            gap: 8px;
+            padding: 0 5px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background-color: rgba(255, 255, 255, 0.08);
+            padding: 8px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .cta-btn {
+            background: linear-gradient(90deg, #ff3b5c 0%, #e91e63 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(249, 47, 96, 0.3);
+            margin-top: 5px;
+        }
+
+        .cta-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: white;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            text-align: center;
+            margin-top: 10px;
+            padding-bottom: 20px;
+        }
+
+        .stat-item .value {
+            color: var(--accent-pink);
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-item .label {
+            color: var(--text-muted);
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <div class="video-player">
-            <div class="play-btn" id="playBtn">
-                <div class="play-icon"></div>
-            </div>
-            <div class="duration">0:48</div>
-            <div class="controls">
-                <div class="small-play-btn" id="smallPlayBtn"></div>
-                <input type="range" class="progress-slider" id="progressSlider" min="0" max="100" value="0">
-            </div>
+<div class="app-container">
+    
+    <div class="header">
+        <div class="logo">Private Hub</div>
+        <div class="live-badge">
+            <div class="live-dot"></div>
+            LIVE
         </div>
-
-        <h1 class="title">Материалы дела</h1>
-        <p class="description">Доступ к протоколу №4829-Б и видеозаписи системы ГЛОНАСС/GPS ограничен политикой безопасности.</p>
-
-        <div class="details-box">
-            <div class="detail-row">
-                <span class="detail-label">Дата события:</span>
-                <span class="detail-value">Сегодня</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Статус:</span>
-                <span class="detail-value value-green">Проверено ГИБДД</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Формат:</span>
-                <span class="detail-value">Full HD (MP4)</span>
-            </div>
-        </div>
-
-        <a href="#" id="officialLink" class="main-btn">Открыть официальный плеер</a>
     </div>
 
-    <script>
-        // Переменная со ссылкой для кнопки
-        const linkUrl = "https://google.com/";
-        
-        document.getElementById('officialLink').href = linkUrl;
+    <div class="video-card">
+        <div class="top-badges">
+            <div class="online-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                1.2K online
+            </div>
+            <div class="age-badge">18+</div>
+        </div>
 
-        const playBtn = document.getElementById('playBtn');
-        const smallPlayBtn = document.getElementById('smallPlayBtn');
-        const slider = document.getElementById('progressSlider');
+        <div class="play-button-center">
+            <svg viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+            </svg>
+        </div>
 
-        const showPlayerAlert = () => {
-            alert('Воспроизведение доступно только через официальный плеер! Установите его, нажав кнопку ниже.');
-        };
+        <div class="video-controls">
+            <div class="progress-bar">
+                <div class="progress-filled"></div>
+            </div>
+            <div class="time-labels">
+                <span>0:48</span>
+                <span>4:12</span>
+            </div>
+        </div>
+    </div>
 
-        playBtn.addEventListener('click', showPlayerAlert);
-        smallPlayBtn.addEventListener('click', showPlayerAlert);
+    <div class="user-section">
+        <div class="avatar">A</div>
+        <div class="user-details">
+            <div class="name">Аня, 23 💋</div>
+            <div class="meta">Загружено 2 часа назад • Приватное</div>
+        </div>
+    </div>
 
-        slider.addEventListener('input', function() {
-            const value = this.value;
-            this.style.background = `linear-gradient(to right, #ff0000 0%, #ff0000 ${value}%, rgba(255, 255, 255, 0.3) ${value}%, rgba(255, 255, 255, 0.3) 100%)`;
-        });
-    </script>
+    <div class="tags">
+        <div class="tag">🔥 Тренд</div>
+        <div class="tag">Приватное</div>
+        <div class="tag">Эксклюзив</div>
+        <div class="tag">HD</div>
+    </div>
+
+    <button class="cta-btn">
+        <svg viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+        </svg>
+        Смотреть полное видео
+    </button>
+
+    <div class="stats">
+        <div class="stat-item">
+            <div class="value">14.8K</div>
+            <div class="label">Просмотры</div>
+        </div>
+        <div class="stat-item">
+            <div class="value">892</div>
+            <div class="label">Лайки</div>
+        </div>
+        <div class="stat-item">
+            <div class="value">4:12</div>
+            <div class="label">Длительность</div>
+        </div>
+    </div>
+
+</div>
+
 </body>
 </html>
