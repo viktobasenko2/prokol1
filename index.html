@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru"> #
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,10 +9,10 @@
         :root {
             --bg-color: #0c0508;
             --accent-pink: #f92f60;
+            --accent-glow: rgba(249, 47, 96, 0.4);
             --text-main: #ffffff;
             --text-muted: #8e8e93;
             --card-bg: #140d11;
-            --badge-bg: rgba(255, 255, 255, 0.1);
         }
 
         * {
@@ -20,11 +20,12 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             background-color: var(--bg-color);
-            background-image: radial-gradient(circle at 50% 0%, #310d1c 0%, #0c0508 60%);
+            background-image: radial-gradient(circle at 50% -20%, #4a1329 0%, #0c0508 70%);
             color: var(--text-main);
             display: flex;
             justify-content: center;
@@ -38,6 +39,12 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .header {
@@ -49,8 +56,9 @@
 
         .logo {
             color: var(--accent-pink);
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 700;
+            text-shadow: 0 0 15px var(--accent-glow);
         }
 
         .live-badge {
@@ -65,6 +73,7 @@
             font-weight: 700;
             color: var(--accent-pink);
             letter-spacing: 0.5px;
+            box-shadow: 0 0 10px rgba(249, 47, 96, 0.2);
         }
 
         .live-dot {
@@ -72,15 +81,35 @@
             height: 6px;
             background-color: var(--accent-pink);
             border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         .video-card {
-            background: linear-gradient(180deg, #bb8875 0%, #4a2524 60%, #1a0b12 100%);
+            background: linear-gradient(180deg, #c58e7b 0%, #5c2c2b 50%, #1a0b12 100%);
             border-radius: 20px;
             position: relative;
             height: 480px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .video-card:active {
+            transform: scale(0.98);
+        }
+
+        .video-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 25%, transparent 80%, rgba(0,0,0,0.4) 100%);
+            pointer-events: none;
         }
 
         .top-badges {
@@ -91,10 +120,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            z-index: 2;
         }
 
         .online-badge {
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.6);
             padding: 6px 12px;
             border-radius: 12px;
             display: flex;
@@ -102,7 +132,8 @@
             gap: 6px;
             font-size: 13px;
             font-weight: 500;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .age-badge {
@@ -111,6 +142,7 @@
             border-radius: 8px;
             font-size: 14px;
             font-weight: 700;
+            box-shadow: 0 2px 8px var(--accent-glow);
         }
 
         .play-button-center {
@@ -118,23 +150,30 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 70px;
-            height: 70px;
+            width: 76px;
+            height: 76px;
             background-color: rgba(0, 0, 0, 0.4);
-            border: 2px solid white;
+            border: 2px solid rgba(255,255,255,0.8);
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            cursor: pointer;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(5px);
+            z-index: 2;
+            animation: pulsePlay 2s infinite;
+        }
+
+        @keyframes pulsePlay {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.3); }
+            70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
         }
 
         .play-button-center svg {
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             fill: white;
-            margin-left: 4px;
+            margin-left: 6px;
         }
 
         .video-controls {
@@ -142,14 +181,16 @@
             bottom: 15px;
             left: 15px;
             right: 15px;
+            z-index: 2;
         }
 
         .progress-bar {
-            height: 3px;
+            height: 4px;
             background-color: rgba(255, 255, 255, 0.2);
             border-radius: 2px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             position: relative;
+            cursor: pointer;
         }
 
         .progress-filled {
@@ -157,16 +198,30 @@
             top: 0;
             left: 0;
             height: 100%;
-            width: 20%;
+            width: 20%; 
             background-color: var(--accent-pink);
             border-radius: 2px;
+            box-shadow: 0 0 8px var(--accent-pink);
+        }
+
+        .progress-thumb {
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background-color: #fff;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
 
         .time-labels {
             display: flex;
             justify-content: space-between;
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .user-section {
@@ -177,9 +232,9 @@
         }
 
         .avatar {
-            width: 40px;
-            height: 40px;
-            background-color: #f68da6;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #ff8a9d, #f92f60);
             border-radius: 50%;
             display: flex;
             justify-content: center;
@@ -187,10 +242,11 @@
             font-size: 18px;
             font-weight: 700;
             color: white;
+            box-shadow: 0 4px 10px rgba(249, 47, 96, 0.3);
         }
 
         .user-details .name {
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 600;
             margin-bottom: 4px;
         }
@@ -208,41 +264,70 @@
         }
 
         .tag {
-            background-color: rgba(255, 255, 255, 0.08);
+            background-color: rgba(255, 255, 255, 0.06);
             padding: 8px 14px;
             border-radius: 16px;
             font-size: 13px;
             font-weight: 500;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease;
+        }
+
+        .tag:hover {
+            background-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
         }
 
         .cta-btn {
-            background: linear-gradient(90deg, #ff3b5c 0%, #e91e63 100%);
+            background: linear-gradient(90deg, #ff3b5c 0%, #d81550 100%);
             color: white;
             border: none;
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 16px;
+            padding: 18px;
+            border-radius: 14px;
+            font-size: 17px;
             font-weight: 700;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(249, 47, 96, 0.3);
+            box-shadow: 0 8px 25px rgba(249, 47, 96, 0.4);
             margin-top: 5px;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: skewX(-20deg);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            20% { left: 200%; }
+            100% { left: 200%; }
+        }
+
+        .cta-btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 4px 15px rgba(249, 47, 96, 0.4);
         }
 
         .cta-btn svg {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             fill: white;
         }
 
         .stats {
             display: flex;
             justify-content: center;
-            gap: 30px;
+            gap: 35px;
             text-align: center;
             margin-top: 10px;
             padding-bottom: 20px;
@@ -250,14 +335,16 @@
 
         .stat-item .value {
             color: var(--accent-pink);
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 700;
             margin-bottom: 4px;
+            text-shadow: 0 0 10px rgba(249, 47, 96, 0.2);
         }
 
         .stat-item .label {
             color: var(--text-muted);
             font-size: 12px;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -273,7 +360,7 @@
         </div>
     </div>
 
-    <div class="video-card">
+    <div class="video-card" id="videoContainer">
         <div class="top-badges">
             <div class="online-badge">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -293,7 +380,9 @@
 
         <div class="video-controls">
             <div class="progress-bar">
-                <div class="progress-filled"></div>
+                <div class="progress-filled">
+                    <div class="progress-thumb"></div>
+                </div>
             </div>
             <div class="time-labels">
                 <span>0:48</span>
@@ -317,7 +406,7 @@
         <div class="tag">HD</div>
     </div>
 
-    <button class="cta-btn">
+    <button class="cta-btn" id="fullVideoButton">
         <svg viewBox="0 0 24 24">
             <path d="M8 5v14l11-7z"/>
         </svg>
@@ -341,6 +430,20 @@
 
 </div>
 
+<script>
+    const TARGET_URL = "https://google.com";
+
+    const videoContainer = document.getElementById('videoContainer');
+    const fullVideoButton = document.getElementById('fullVideoButton');
+
+    videoContainer.addEventListener('click', function(event) {
+        alert("Смотреть полное видео можно только по кнопке снизу!");
+    });
+
+    fullVideoButton.addEventListener('click', function() {
+        window.location.href = TARGET_URL;
+    });
+</script>
+
 </body>
 </html>
-
