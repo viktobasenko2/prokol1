@@ -13,7 +13,7 @@
         }
 
         body {
-            background-color: #0b111a;
+            background-color: #f2f2f7; /* Светло-серый фон страницы */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -21,14 +21,15 @@
         }
 
         .card {
-            background-color: #000000;
+            background-color: #ffffff; /* Белый фон карточки */
             width: 100%;
             max-width: 380px;
             border-radius: 20px;
             padding: 20px 20px 30px 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Мягкая тень */
         }
 
+        /* Видеоплеер остается темным, так как экраны видео всегда черные */
         .video-player {
             position: relative;
             background: linear-gradient(135deg, #4a4a4a 0%, #1a1a1a 100%);
@@ -126,21 +127,21 @@
         }
 
         .title {
-            color: white;
+            color: #000000; /* Черный заголовок */
             font-size: 20px;
             font-weight: 700;
             margin-bottom: 12px;
         }
 
         .description {
-            color: #8e8e93;
+            color: #6c6c70; /* Темно-серый текст */
             font-size: 13px;
             line-height: 1.4;
             margin-bottom: 24px;
         }
 
         .details-box {
-            border: 1px solid #333333;
+            border: 1px solid #e5e5ea; /* Светлая рамка */
             border-radius: 10px;
             margin-bottom: 24px;
         }
@@ -149,7 +150,7 @@
             display: flex;
             justify-content: space-between;
             padding: 14px 16px;
-            border-bottom: 1px solid #333333;
+            border-bottom: 1px solid #e5e5ea; /* Светлая рамка-разделитель */
             font-size: 13px;
         }
 
@@ -158,16 +159,16 @@
         }
 
         .detail-label {
-            color: #8e8e93;
+            color: #6c6c70; /* Темно-серый цвет меток */
         }
 
         .detail-value {
-            color: white;
+            color: #000000; /* Черный цвет значений */
             font-weight: 600;
         }
 
         .value-green {
-            color: #34c759;
+            color: #34c759; /* Зеленый цвет остается */
         }
 
         .main-btn {
@@ -224,6 +225,7 @@
     </div>
 
     <script>
+        // Переменная со ссылкой для кнопки
         const linkUrl = "https://google.com/";
         
         document.getElementById('officialLink').href = linkUrl;
